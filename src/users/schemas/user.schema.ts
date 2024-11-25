@@ -9,10 +9,10 @@ export type UserDocument = HydratedDocument<User>;
 })
 export class User {
   @Prop()
-  first_name: string;
+  firstName: string;
 
   @Prop()
-  last_name: string;
+  lastName: string;
 
   @Prop()
   phone: string;
@@ -39,7 +39,7 @@ export class User {
   codeIdExpiresAt: Date;
 
   @Prop({ default: false })
-  active: boolean;
+  isActive: boolean;
 
 }
 

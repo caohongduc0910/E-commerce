@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config';
+import { UserModule } from './users/user.module';
+import { AuthModule } from './auths/auth.module';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
   imports: [
@@ -9,8 +13,17 @@ import { MongooseModule } from '@nestjs/mongoose';
       isGlobal: true,
     }),
     MongooseModule.forRoot(process.env.MONGO_URL),
+    BullModule.forRootAsync({
+      useFactory: () => ({
+        redis: {
+          host: 'localhost',
+          port: 6379,
+        },
+      }),
+    }),
+    UserModule,
+    AuthModule,
+    MailerModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}
