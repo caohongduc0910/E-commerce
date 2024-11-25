@@ -5,6 +5,7 @@ import { UserModule } from './users/user.module';
 import { AuthModule } from './auths/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { BullModule } from '@nestjs/bull';
+import { ProductModule } from './products/product.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { BullModule } from '@nestjs/bull';
       }),
     }),
     UserModule,
+    ProductModule,
     AuthModule,
     MailerModule,
   ],
