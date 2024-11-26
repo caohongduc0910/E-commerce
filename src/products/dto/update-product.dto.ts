@@ -1,12 +1,7 @@
-import {
-  IsNotEmpty,
-  IsString,
-  IsNumber,
-  IsEnum,
-} from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsEnum } from 'class-validator';
 import { Category, Tag } from 'src/enums/role.enum';
 
-export class CreateProductDTO {
+export class UpdateProductDTO {
   @IsNotEmpty({ message: 'title is required' })
   @IsString()
   readonly title: string;
@@ -15,7 +10,6 @@ export class CreateProductDTO {
   @IsNumber()
   readonly price: number;
 
-  @IsNotEmpty({ message: 'email is required' })
   @IsNumber()
   readonly salePrice: number;
 
@@ -24,10 +18,10 @@ export class CreateProductDTO {
   readonly image: string;
 
   @IsEnum(Category)
-  readonly category: Category
+  readonly category: Category;
 
   @IsEnum(Tag)
-  readonly tag: Tag
+  readonly tag: Tag;
 
   @IsNotEmpty({ message: 'vendor is required' })
   @IsString()

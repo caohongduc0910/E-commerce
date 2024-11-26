@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { Category, Role, Tag } from 'src/enums/role.enum';
+import { Category, Tag } from 'src/enums/role.enum';
 
 export type UserDocument = HydratedDocument<Product>;
 
@@ -33,7 +33,13 @@ export class Product {
   description: string;
 
   @Prop({ default: true })
-  active: boolean;
+  isActive: boolean;
+
+  @Prop({ default: false })
+  isDeleted: boolean;
+
+  @Prop({ default: null })
+  deletedAt: Date;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
