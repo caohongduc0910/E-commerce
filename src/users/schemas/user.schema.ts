@@ -39,7 +39,7 @@ export class User {
   codeIdExpiresAt: Date;
 
   @Prop({ default: false })
-  active: boolean;
+  isActive: boolean;
 
 }
 
