@@ -1,11 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-  ServiceUnavailableException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { SignUpDTO } from './dto/signup.dto';
 import { SignInDTO } from './dto/signin.dto';
 import * as bcrypt from 'bcrypt';
@@ -20,7 +13,7 @@ import generateOTP from 'src/helpers/otp.helper';
 import { OTPService } from 'src/otps/otp.service';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-
+import { hashPassword, comparePassword } from 'src/helpers/password.helper';
 @Injectable()
 export class AuthService {
   constructor(
@@ -41,17 +34,14 @@ export class AuthService {
     });
 
     if (existUser) {
-      throw new ConflictException('User already exists');
+      throw new BadRequestException('User already exists');
     }
 
     if (password != cfPassword) {
       throw new BadRequestException('Passwords do not match');
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(password, salt);
-
-    signupDTO.password = hashed;
+    signupDTO.password = await hashPassword(password);
 
     const codeID = uuidv4();
     signupDTO.codeId = codeID;
@@ -60,22 +50,26 @@ export class AuthService {
     expirationTime.setSeconds(expirationTime.getSeconds() + 30);
     signupDTO.codeIdExpiresAt = expirationTime;
 
-    try {
-      const newUser = await this.userModel.create(signupDTO);
-      
-      const job = await this.emailQueue.add('register', {
-        email: email,
-        codeID: codeID,
-      });
+    const newUser = await this.userModel.create(signupDTO);
 
-      if (!job) {
-        throw new ServiceUnavailableException('Failed to queue email');
-      }
-
-      return newUser;
-    } catch (error) {
-      throw new InternalServerErrorException('Failed to create user');
+    if (!newUser) {
+      throw new BadRequestException('Failed to create user');
     }
+
+    const job = await this.emailQueue.add('register', {
+      email: email,
+      codeID: codeID,
+    });
+
+    if (!job) {
+      throw new BadRequestException('Failed to queue email');
+    }
+
+    const result = { ...newUser.toObject() };
+    delete result.password;
+    delete result.codeId;
+    delete result.codeIdExpiresAt;
+    return result;
   }
 
   async signin(signinDTO: SignInDTO): Promise<any> {
@@ -86,16 +80,16 @@ export class AuthService {
     });
 
     if (!existUser) {
-      throw new NotFoundException("User doesn't exist");
+      throw new BadRequestException("User doesn't exist");
     }
 
-    const validPassword = await bcrypt.compare(password, existUser.password);
+    const validPassword = await comparePassword(password, existUser.password);
     if (!validPassword) {
-      throw new NotFoundException('Wrong password');
+      throw new BadRequestException('Wrong password');
     }
 
     if (existUser.isActive == false) {
-      throw new NotFoundException('Account is deactivated');
+      throw new BadRequestException('Account is deactivated');
     }
 
     const payload = { sub: existUser._id, username: existUser.email };
@@ -109,7 +103,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('Code ID is invalid');
+      throw new BadRequestException('Code ID is invalid');
     } else if (user.isActive == true) {
       throw new BadRequestException('This account has already been activated.');
     } else if (new Date(user.codeIdExpiresAt) < new Date()) {
@@ -128,31 +122,26 @@ export class AuthService {
   }
 
   async reVerify(email: string): Promise<any> {
-    try {
-      const codeId = uuidv4();
+    const codeId = uuidv4();
 
-      const expirationTime = new Date();
-      expirationTime.setSeconds(expirationTime.getSeconds() + 30);
+    const expirationTime = new Date();
+    expirationTime.setSeconds(expirationTime.getSeconds() + 30);
 
-      await this.userModel.updateOne(
-        {
-          email: email,
-        },
-        {
-          codeId: codeId,
-          codeIdExpiresAt: expirationTime,
-        },
-      );
+    await this.userModel.updateOne(
+      {
+        email: email,
+      },
+      {
+        codeId: codeId,
+        codeIdExpiresAt: expirationTime,
+      },
+    );
 
-      console.log(email, codeId);
+    console.log(email, codeId);
 
-      this.mailService.sendVerificationCode(email, codeId);
+    this.mailService.sendVerificationCode(email, codeId);
 
-      return 'Resent verification code successfully! Check your email again';
-    } catch (error) {
-      console.log(error);
-      throw new BadRequestException();
-    }
+    return 'Resent verification code successfully! Check your email again';
   }
 
   async changePassword(changePasswordDTO: ChangePasswordDTO) {
@@ -163,20 +152,19 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('Wrong email!');
+      throw new BadRequestException('Wrong email!');
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
+    const validPassword = await comparePassword(password, user.password);
     if (!validPassword) {
-      throw new NotFoundException('Wrong password');
+      throw new BadRequestException('Wrong password');
     }
 
     if (newPassword != cfPassword) {
-      throw new ConflictException("Password doesn't match");
+      throw new BadRequestException("Password doesn't match");
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(newPassword, salt);
+    const hashed = await hashPassword(newPassword);
 
     await this.userModel.updateOne(
       {
@@ -196,7 +184,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('User does not exist!');
+      throw new BadRequestException('User does not exist!');
     }
     const otp = generateOTP();
 
@@ -216,15 +204,14 @@ export class AuthService {
     const existOTP = await this.otpSerivce.findByOtp(otp);
 
     if (!existOTP) {
-      throw new NotFoundException('OTP is expired');
+      throw new BadRequestException('OTP is expired');
     }
 
     if (password != cfPassword) {
-      throw new ConflictException("Password doesn't match");
+      throw new BadRequestException("Password doesn't match");
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(password, salt);
+    const hashed = await hashPassword(password);
 
     await this.userModel.updateOne(
       {

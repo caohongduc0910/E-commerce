@@ -16,14 +16,15 @@ import { BullModule } from '@nestjs/bull';
     BullModule.forRootAsync({
       useFactory: () => ({
         redis: {
-          host: 'localhost',
-          port: 6379,
+          host: process.env.REDIS_HOST,
+          port: parseInt(process.env.REDIS_PORT),
         },
       }),
     }),
     UserModule,
     AuthModule,
     MailerModule,
+    AppModule,
   ],
 })
 export class AppModule {}

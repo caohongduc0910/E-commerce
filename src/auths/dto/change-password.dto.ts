@@ -1,20 +1,20 @@
-import { IsEmail, IsNotEmpty, IsString } from "class-validator"
+import { IsDefined, IsEmail, IsString } from "class-validator"
 
 export class ChangePasswordDTO {
-    @IsNotEmpty()
+    @IsDefined()
     @IsString()
     @IsEmail()
     readonly email: string
 
-    @IsNotEmpty()
+    @IsDefined()
     @IsString()
     password: string
 
-    @IsNotEmpty()
+    @IsDefined()
     @IsString()
     newPassword: string
     
-    @IsNotEmpty()
+    @IsDefined()
     @IsString()
     readonly cfPassword: string
 }
