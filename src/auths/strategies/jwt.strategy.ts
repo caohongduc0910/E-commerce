@@ -19,7 +19,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const user = await this.userModel.findById(payload.sub).select('-password');
+    console.log(payload)
+    const user = await this.userModel.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException('Login first to access this endpoint!');
     }

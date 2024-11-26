@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsEmail, IsString, IsUUID, IsDate, IsOptional, MinLength, MaxLength, Matches} from 'class-validator';
+import { IsNotEmpty, IsEmail, IsString, MinLength, MaxLength, Matches} from 'class-validator';
 
 export class SignUpDTO {
   @IsNotEmpty({ message: 'first name is required' })
@@ -21,16 +21,4 @@ export class SignUpDTO {
     message: 'password must include uppercase, lowercase, number, and special character',
   })
   password: string;
-
-  @IsOptional()
-  @IsUUID()
-  codeId: string;
-
-  @IsOptional()
-  @IsDate()
-  codeIdExpiresAt: Date;
-
-  @IsNotEmpty({ message: 'confirm password is required' })
-  @IsString()
-  cfPassword: string;
 }

@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { SignUpDTO } from './dto/signup.dto';
 import { SignInDTO } from './dto/signin.dto';
-import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from 'src/mails/mail.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,6 +13,8 @@ import { OTPService } from 'src/otps/otp.service';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { hashPassword, comparePassword } from 'src/helpers/password.helper';
+import { QUEUE_NAMES } from 'src/common/constants/queue.constant';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -22,12 +23,12 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailService,
     private otpSerivce: OTPService,
-    @InjectQueue('emailSending')
+    @InjectQueue(QUEUE_NAMES.EMAIL)
     private emailQueue: Queue,
   ) {}
 
   async signup(signupDTO: SignUpDTO): Promise<any> {
-    const { email, password, cfPassword } = signupDTO;
+    const { email, password } = signupDTO;
 
     const existUser = await this.userModel.findOne({
       email: email,
@@ -37,39 +38,33 @@ export class AuthService {
       throw new BadRequestException('User already exists');
     }
 
-    if (password != cfPassword) {
-      throw new BadRequestException('Passwords do not match');
-    }
-
-    signupDTO.password = await hashPassword(password);
-
-    const codeID = uuidv4();
-    signupDTO.codeId = codeID;
-
+    const uuid = uuidv4();
     const expirationTime = new Date();
     expirationTime.setSeconds(expirationTime.getSeconds() + 30);
-    signupDTO.codeIdExpiresAt = expirationTime;
 
-    const newUser = await this.userModel.create(signupDTO);
+    const signupUser = {
+      firstName: signupDTO.firstName,
+      lastName: signupDTO.lastName,
+      email: signupDTO.email,
+      password: await hashPassword(password),
+      codeId: uuid,
+      codeIdExpiresAt: expirationTime,
+    };
 
-    if (!newUser) {
-      throw new BadRequestException('Failed to create user');
-    }
+    const newUser = await this.userModel.create(signupUser);
 
-    const job = await this.emailQueue.add('register', {
+    const job = await this.emailQueue.add(QUEUE_NAMES.REGISTER, {
       email: email,
-      codeID: codeID,
+      codeID: uuid,
     });
 
-    if (!job) {
-      throw new BadRequestException('Failed to queue email');
-    }
-
-    const result = { ...newUser.toObject() };
-    delete result.password;
-    delete result.codeId;
-    delete result.codeIdExpiresAt;
-    return result;
+    const returnUser = {
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      email: newUser.email,
+      isActive: newUser.isActive,
+    };
+    return returnUser;
   }
 
   async signin(signinDTO: SignInDTO): Promise<any> {
@@ -88,7 +83,7 @@ export class AuthService {
       throw new BadRequestException('Wrong password');
     }
 
-    if (existUser.isActive == false) {
+    if (!existUser.isActive) {
       throw new BadRequestException('Account is deactivated');
     }
 
@@ -97,14 +92,15 @@ export class AuthService {
     return access_token;
   }
 
-  async verify(verifyCode: string): Promise<any> {
+  async verify(email: string, verifyCode: string): Promise<any> {
     const user = await this.userModel.findOne({
+      email: email,
       codeId: verifyCode,
     });
 
     if (!user) {
       throw new BadRequestException('Code ID is invalid');
-    } else if (user.isActive == true) {
+    } else if (user.isActive) {
       throw new BadRequestException('This account has already been activated.');
     } else if (new Date(user.codeIdExpiresAt) < new Date()) {
       throw new BadRequestException('This code is expired');
@@ -122,7 +118,7 @@ export class AuthService {
   }
 
   async reVerify(email: string): Promise<any> {
-    const codeId = uuidv4();
+    const uuid = uuidv4();
 
     const expirationTime = new Date();
     expirationTime.setSeconds(expirationTime.getSeconds() + 30);
@@ -132,20 +128,18 @@ export class AuthService {
         email: email,
       },
       {
-        codeId: codeId,
+        codeId: uuid,
         codeIdExpiresAt: expirationTime,
       },
     );
 
-    console.log(email, codeId);
-
-    this.mailService.sendVerificationCode(email, codeId);
+    this.mailService.sendVerificationCode(email, uuid);
 
     return 'Resent verification code successfully! Check your email again';
   }
 
   async changePassword(changePasswordDTO: ChangePasswordDTO) {
-    const { email, password, newPassword, cfPassword } = changePasswordDTO;
+    const { email, password, newPassword } = changePasswordDTO;
 
     const user = await this.userModel.findOne({
       email: email,
@@ -158,10 +152,6 @@ export class AuthService {
     const validPassword = await comparePassword(password, user.password);
     if (!validPassword) {
       throw new BadRequestException('Wrong password');
-    }
-
-    if (newPassword != cfPassword) {
-      throw new BadRequestException("Password doesn't match");
     }
 
     const hashed = await hashPassword(newPassword);
@@ -188,7 +178,7 @@ export class AuthService {
     }
     const otp = generateOTP();
 
-    const job = await this.emailQueue.add('passwordForget', {
+    const job = await this.emailQueue.add(QUEUE_NAMES.FORGET, {
       email: user.email,
       otp: otp,
     });
@@ -200,15 +190,13 @@ export class AuthService {
     return 'Successfully! Check your email to get OTP';
   }
 
-  async resetPassword(otp: string, password: string, cfPassword: string) {
+  async resetPassword(otp: string, password: string) {
     const existOTP = await this.otpSerivce.findByOtp(otp);
 
     if (!existOTP) {
       throw new BadRequestException('OTP is expired');
-    }
-
-    if (password != cfPassword) {
-      throw new BadRequestException("Password doesn't match");
+    } else if (new Date(existOTP.expiresAt) < new Date()) {
+      throw new BadRequestException('This otp is expired');
     }
 
     const hashed = await hashPassword(password);

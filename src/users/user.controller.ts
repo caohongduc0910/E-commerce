@@ -6,23 +6,12 @@ import { JwtAuthGuard } from 'src/auths/guards/auth.guard';
 
 @Controller('users')
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   @UseGuards(JwtAuthGuard)
   @Get('/:id')
   async getUser(@Param('id') id: string): Promise<ResponseData> {
-    try {
-      const user = await this.userService.findById(id);
-      return new ResponseData(
-        user,
-        HttpStatus.SUCCESS,
-        HttpMessage.SUCCESS,
-      );
-    } catch (error) {
-      console.log(error);
-      return new ResponseData(null, HttpStatus.ERROR, HttpMessage.ERROR);
-    }
+    const user = await this.userService.findById(id);
+    return new ResponseData(user, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 }

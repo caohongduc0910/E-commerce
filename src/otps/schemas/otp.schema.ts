@@ -13,7 +13,7 @@ export class OTP {
   @Prop()
   email: string;
 
-  @Prop({ type: Date, expires: 60 })
+  @Prop({ type: Date })
   expiresAt: Date;
 }
 

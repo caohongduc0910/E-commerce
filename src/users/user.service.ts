@@ -16,20 +16,6 @@ export class UserService {
     return user;
   }
 
-  async findByEmail(email: string): Promise<any> {
-    const user = await this.userModel.find({
-      email: email
-    }).select('-password');
-    return user;
-  }
-
-  async findByCodeId(codeId: string): Promise<any> {
-    const user = await this.userModel.find({
-      codeId: codeId
-    }).select('-password');
-    return user;
-  }
-
   async create(user: SignUpDTO): Promise<any> {
     const newUser = await this.userModel.create(user);
     return newUser;
