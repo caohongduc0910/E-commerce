@@ -12,20 +12,22 @@ export class CreateProductDTO {
   readonly title: string;
 
   @IsNotEmpty({ message: 'price is required' })
-  @IsNumber()
+  // @IsNumber()
   readonly price: number;
 
-  @IsNotEmpty({ message: 'email is required' })
-  @IsNumber()
+  @IsNotEmpty({ message: 'sale price is required' })
+  // @IsNumber()
   readonly salePrice: number;
 
-  @IsNotEmpty({ message: 'image is required' })
-  @IsString()
-  readonly image: string;
+  // @IsNotEmpty({ message: 'image is required' })
+  // @IsString()
+  // readonly image: string;
 
+  @IsNotEmpty({ message: 'category is required' })
   @IsEnum(Category)
   readonly category: Category
 
+  @IsNotEmpty({ message: 'tag is required' })
   @IsEnum(Tag)
   readonly tag: Tag
 

@@ -5,12 +5,14 @@ import { Product } from './schemas/product.schema';
 import PaginationHelper from 'src/helpers/pagination.helper';
 import { CreateProductDTO } from './dto/create-product.dto';
 import { UpdateProductDTO } from './dto/update-product.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectModel(Product.name)
     private productModel: mongoose.Model<Product>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async findById(id: string): Promise<any> {
@@ -82,8 +84,13 @@ export class ProductService {
     return products;
   }
 
-  async create(createProductDTO: CreateProductDTO): Promise<Product> {
-    const newProduct = await this.productModel.create(createProductDTO);
+  async create(createProductDTO: CreateProductDTO, file): Promise<any> {
+    const uploadResult = await this.cloudinaryService.uploadImage(file);
+    const newCreateProductDTO = {
+      ...createProductDTO,
+      image: uploadResult.secure_url,
+    };
+    const newProduct = await this.productModel.create(newCreateProductDTO);
     return newProduct;
   }
 

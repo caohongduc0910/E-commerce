@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query,
+  Request,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -17,6 +18,8 @@ import { JwtAuthGuard } from 'src/auths/guards/auth.guard';
 import { CreateProductDTO } from './dto/create-product.dto';
 import { UpdateProductDTO } from './dto/update-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Public } from 'src/auths/decorators/public.decorator';
+import { memoryStorage } from 'multer';
 
 @Controller('products')
 export class ProductController {
@@ -34,6 +37,7 @@ export class ProductController {
     }
   }
 
+  @Public()
   @UseGuards(JwtAuthGuard)
   @Get()
   async getAllProducts(@Query() query: any): Promise<ResponseData> {
@@ -52,13 +56,25 @@ export class ProductController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('img', {
+      storage: memoryStorage(),
+    }),
+  )
+  @Public()
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  // @UseInterceptors(
+  //   FileInterceptor('img', {
+  //     storage: memoryStorage(),
+  //     limits: { fileSize: 5 * 1024 * 1024 },
+  //   }),
+  // )
   async createProduct(
     @Body() createProductDTO: CreateProductDTO,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ResponseData> {
-    const product = await this.productService.create(createProductDTO);
+    const product = await this.productService.create(createProductDTO, file);
     return new ResponseData(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
