@@ -2,10 +2,6 @@ import {
   IsNotEmpty,
   IsEmail,
   IsString,
-  MinLength,
-  MaxLength,
-  Matches,
-  IsPhoneNumber,
   IsDate,
 } from 'class-validator';
 

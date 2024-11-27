@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDTO } from './dto/signup.dto';
 import { ResponseData } from 'src/globals/globalClass';
@@ -11,26 +19,26 @@ import { JwtAuthGuard } from './guards/auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('/signup')
+  @Post('signup')
   async signup(@Body() signupDTO: SignUpDTO): Promise<ResponseData> {
     const newUser = await this.authService.signup(signupDTO);
     return new ResponseData(newUser, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  @Post('/signin')
+  @Post('signin')
   async signin(@Body() signinDTO: SignInDTO): Promise<ResponseData> {
     const token = await this.authService.signin(signinDTO);
     return new ResponseData(token, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  @Post('/verify')
+  @Post('verify')
   async verify(@Body() body: any): Promise<any> {
     const { email, codeId } = body;
     const response = await this.authService.verify(email, codeId);
     return new ResponseData(response, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  @Post('/re-verify')
+  @Post('re-verify')
   async reVerify(@Body() body: any): Promise<any> {
     const { email } = body;
     const response = await this.authService.reVerify(email);
@@ -41,7 +49,9 @@ export class AuthController {
   @Post('/change-password')
   async changePassword(
     @Body() changePasswordDTO: ChangePasswordDTO,
+    @Req() request: Request,
   ): Promise<any> {
+    // const { id } = request;
     const response = await this.authService.changePassword(changePasswordDTO);
     return new ResponseData(response, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }

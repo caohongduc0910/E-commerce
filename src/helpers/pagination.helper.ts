@@ -5,7 +5,7 @@ const PaginationHelper = (index, totalBooks) => {
       startItem: number;
       totalPages: number;
     } = {
-      limitItems: 4,
+      limitItems: 5,
       currentPage: 1,
       startItem: 0,
       totalPages: 0,

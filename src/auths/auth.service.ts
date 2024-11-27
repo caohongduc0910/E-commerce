@@ -118,6 +118,17 @@ export class AuthService {
   }
 
   async reVerify(email: string): Promise<any> {
+
+    const user = await this.userModel.findOne({
+      email: email,
+    });
+
+    if (!user) {
+      throw new BadRequestException('Email does not exist');
+    } else if (user.isActive) {
+      throw new BadRequestException('This account has already been activated.');
+    }
+
     const uuid = uuidv4();
 
     const expirationTime = new Date();

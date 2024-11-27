@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/users/schemas/user.schema';
 import PaginationHelper from 'src/helpers/pagination.helper';
@@ -13,7 +13,10 @@ export class UserService {
     private userModel: mongoose.Model<User>,
   ) {}
 
-  async findById(id: string): Promise<any> {
+  async findById(id: string, userID: string, role: string): Promise<any> {
+    if (id !== userID && role === 'user') {
+      throw new BadRequestException("You can't access this endpoint");
+    }
     const user = await this.userModel.findById(id).select('-password');
     return user;
   }
@@ -77,14 +80,24 @@ export class UserService {
     return newUser;
   }
 
-  async update(id: string, updateUserDTO: UpdateUserDTO): Promise<User> {
+  async update(
+    id: string,
+    updateUserDTO: UpdateUserDTO,
+    userID: string,
+  ): Promise<User> {
+    if (id !== userID) {
+      throw new BadRequestException("You can't access this endpoint");
+    }
     const user = await this.userModel.findByIdAndUpdate(id, updateUserDTO, {
       new: true,
     });
     return user;
   }
 
-  async delete(id: string): Promise<User> {
+  async delete(id: string, userID: string): Promise<User> {
+    if (id !== userID) {
+      throw new BadRequestException("You can't access this endpoint");
+    }
     const user = await this.userModel.findByIdAndUpdate(
       id,
       { isDeleted: true, deletedAt: new Date() },

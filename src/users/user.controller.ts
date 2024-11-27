@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { HttpMessage, HttpStatus } from 'src/globals/globalEnum';
@@ -14,6 +15,9 @@ import { ResponseData } from 'src/globals/globalClass';
 import { JwtAuthGuard } from 'src/auths/guards/auth.guard';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDTO } from './dto/update-user.dto';
+import { Roles } from 'src/role/role.decorator';
+import { Role } from 'src/enums/role.enum';
+import { RolesGuard } from 'src/role/role.guard';
 
 @Controller('users')
 export class UserController {
@@ -21,12 +25,19 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getUser(@Param('id') id: string): Promise<ResponseData> {
-    const user = await this.userService.findById(id);
+  async getUser(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ): Promise<ResponseData> {
+    const userID = req['user'].id;
+    const role = req['user'].role;
+    console.log(userID, role);
+    const user = await this.userService.findById(id, userID, role);
     return new ResponseData(user, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Get('')
   async getAllUsers(@Query() query: any): Promise<ResponseData> {
     const { keyword, index, sortKey, sortValue } = query;
@@ -39,28 +50,36 @@ export class UserController {
     return new ResponseData(users, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post()
-  async createBook(
+  async createUser(
     @Body() createUserDTO: CreateUserDTO,
   ): Promise<ResponseData> {
     const user = await this.userService.create(createUserDTO);
     return new ResponseData(user, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  async updateBook(
+  async updateUser(
     @Param('id') id: string,
     @Body() updateUserDTO: UpdateUserDTO,
+    @Req() req: Request,
   ): Promise<ResponseData> {
-    const user = await this.userService.update(id, updateUserDTO);
+    const userID = req['user'].id;
+    const user = await this.userService.update(id, updateUserDTO, userID);
     return new ResponseData(user, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  async deleteBook(
+  async deleteUser(
     @Param('id') id: string,
+    @Req() req: Request,
   ): Promise<ResponseData> {
-    const user = await this.userService.delete(id);
+    const userID = req['user'].id;
+    const user = await this.userService.delete(id, userID);
     return new ResponseData(user, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 }
