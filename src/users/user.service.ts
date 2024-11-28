@@ -46,11 +46,11 @@ export class UserService {
     }
 
     let sort: Record<string, any> = {
-      createdAt: 'asc',
+      createdAt: 'desc',
     };
 
     if (sortKey && sortValue) {
-      sort = { [sortKey]: sortValue };
+      sort = { [sortKey]: sortValue, ...sort };
     }
 
     const skip = calculateOffset(page, limit);
@@ -79,7 +79,7 @@ export class UserService {
     userID: string,
   ): Promise<User> {
     if (id !== userID) {
-      throw new UnauthorizedException("You can't access this endpoint");
+      throw new BadRequestException("You can't access this endpoint");
     }
     const user = await this.userModel.findByIdAndUpdate(id, updateUserDTO, {
       new: true,
@@ -93,7 +93,7 @@ export class UserService {
 
   async delete(id: string, userID: string): Promise<User> {
     if (id !== userID) {
-      throw new UnauthorizedException("You can't access this endpoint");
+      throw new BadRequestException("You can't access this endpoint");
     }
     const user = await this.userModel.findByIdAndUpdate(
       id,
