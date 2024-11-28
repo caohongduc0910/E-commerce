@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -24,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     const user = await this.userModel.findById(payload.sub);
     if (!user) {
-      throw new BadRequestException('Login first to access this endpoint!');
+      throw new UnauthorizedException('Login first to access this endpoint!');
     }
     return user;
   }

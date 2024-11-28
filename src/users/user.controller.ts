@@ -18,6 +18,8 @@ import { UpdateUserDTO } from './dto/update-user.dto';
 import { Roles } from 'src/role/role.decorator';
 import { Role } from 'src/enums/role.enum';
 import { RolesGuard } from 'src/role/role.guard';
+import { User } from './schemas/user.schema';
+import { GetUser } from './decorators/user.decorator';
 
 @Controller('users')
 export class UserController {
@@ -27,13 +29,13 @@ export class UserController {
   @Get(':id')
   async getUser(
     @Param('id') id: string,
-    @Req() req: Request,
+    @GetUser() user: User,
   ): Promise<ResponseData> {
-    const userID = req['user'].id;
-    const role = req['user'].role;
+    const userID = user['id'];
+    const role = user['role'];
     console.log(userID, role);
-    const user = await this.userService.findById(id, userID, role);
-    return new ResponseData(user, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
+    const result = await this.userService.findById(id, userID, role);
+    return new ResponseData(result, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -65,21 +67,21 @@ export class UserController {
   async updateUser(
     @Param('id') id: string,
     @Body() updateUserDTO: UpdateUserDTO,
-    @Req() req: Request,
+    @GetUser() user: User,
   ): Promise<ResponseData> {
-    const userID = req['user'].id;
-    const user = await this.userService.update(id, updateUserDTO, userID);
-    return new ResponseData(user, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
+    const userID = user['id'];
+    const result = await this.userService.update(id, updateUserDTO, userID);
+    return new ResponseData(result, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async deleteUser(
     @Param('id') id: string,
-    @Req() req: Request,
+    @GetUser() user: User,
   ): Promise<ResponseData> {
-    const userID = req['user'].id;
-    const user = await this.userService.delete(id, userID);
-    return new ResponseData(user, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
+    const userID = user['id'];
+    const result = await this.userService.delete(id, userID);
+    return new ResponseData(result, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 }

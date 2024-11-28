@@ -1,24 +1,24 @@
-const PaginationHelper = (index, totalBooks) => {
+const PaginationHelper = (index, total) => {
     const objectPagination: {
       limitItems: number;
       currentPage: number;
-      startItem: number;
+      skip: number;
       totalPages: number;
     } = {
       limitItems: 5,
       currentPage: 1,
-      startItem: 0,
+      skip: 0,
       totalPages: 0,
     };
   
     if (index) {
       objectPagination.currentPage = index;
-      objectPagination.startItem =
+      objectPagination.skip =
         (objectPagination.currentPage - 1) * objectPagination.limitItems;
     }
   
     objectPagination['totalPages'] = Math.ceil(
-      totalBooks / objectPagination.limitItems,
+      total / objectPagination.limitItems,
     );
   
     return objectPagination;

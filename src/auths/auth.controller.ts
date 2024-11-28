@@ -14,6 +14,8 @@ import { HttpMessage, HttpStatus } from 'src/globals/globalEnum';
 import { SignInDTO } from './dto/signin.dto';
 import { ChangePasswordDTO } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/auth.guard';
+import { GetUser } from 'src/users/decorators/user.decorator';
+import { User } from 'src/users/schemas/user.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -49,10 +51,10 @@ export class AuthController {
   @Post('/change-password')
   async changePassword(
     @Body() changePasswordDTO: ChangePasswordDTO,
-    @Req() request: Request,
+    @GetUser() user: User,
   ): Promise<any> {
-    // const { id } = request;
-    const response = await this.authService.changePassword(changePasswordDTO);
+    const id = user['id']
+    const response = await this.authService.changePassword(changePasswordDTO, id);
     return new ResponseData(response, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 

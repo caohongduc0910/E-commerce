@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsString,
   IsDate,
+  IsOptional,
 } from 'class-validator';
 
 export class UpdateUserDTO {
@@ -18,12 +19,15 @@ export class UpdateUserDTO {
   @IsEmail({}, { message: 'invalid email format' })
   email: string;
 
+  @IsOptional()
   @IsString()
   phone: string;
 
+  @IsOptional()
   @IsDate()
   dateOfBirth: Date;
 
+  @IsOptional()
   @IsString()
   address: string;
 }

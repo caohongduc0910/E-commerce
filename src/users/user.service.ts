@@ -1,10 +1,15 @@
 import mongoose from 'mongoose';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/users/schemas/user.schema';
 import PaginationHelper from 'src/helpers/pagination.helper';
 import { UpdateUserDTO } from './dto/update-user.dto';
 import { CreateUserDTO } from './dto/create-user.dto';
+import { UserQuery } from '../common/interfaces/query.interface';
 
 @Injectable()
 export class UserService {
@@ -15,7 +20,7 @@ export class UserService {
 
   async findById(id: string, userID: string, role: string): Promise<any> {
     if (id !== userID && role === 'user') {
-      throw new BadRequestException("You can't access this endpoint");
+      throw new UnauthorizedException("You can't access this endpoint");
     }
     const user = await this.userModel.findById(id).select('-password');
     return user;
@@ -26,17 +31,8 @@ export class UserService {
     index: string,
     sortKey: string,
     sortValue: string,
-  ): Promise<User[]> {
+  ): Promise<any> {
     let users = [];
-
-    interface UserQuery {
-      $or: Array<{
-        firstName?: RegExp;
-        lastName?: RegExp;
-      }>;
-      isActive: boolean;
-      isDeleted: boolean;
-    }
 
     const query: UserQuery = {
       $or: [],
@@ -50,16 +46,15 @@ export class UserService {
       query.$or.push({ firstName: regexKeyword }, { lastName: regexKeyword });
     }
 
-    let sort = {};
+    let sort: Record<string, any> = {
+      createdAt: 'asc',
+    };
+
     if (sortKey && sortValue) {
-      sort[sortKey] = sortValue;
-    } else {
-      sort['firstName'] = 'asc';
+      sort = { [sortKey]: sortValue };
     }
 
-    const totalUsers = await this.userModel.countDocuments({
-      isActive: true,
-    });
+    const totalUsers = await this.userModel.countDocuments(query);
     const pagination = PaginationHelper(index, totalUsers);
     console.log(pagination);
 
@@ -67,12 +62,15 @@ export class UserService {
       .find(query)
       .sort(sort)
       .limit(pagination.limitItems)
-      .skip(pagination.startItem);
+      .skip(pagination.skip);
 
     console.log(query);
     console.log(users);
 
-    return users;
+    return {
+      users: users,
+      pagination: pagination,
+    };
   }
 
   async create(user: CreateUserDTO): Promise<any> {
@@ -86,17 +84,21 @@ export class UserService {
     userID: string,
   ): Promise<User> {
     if (id !== userID) {
-      throw new BadRequestException("You can't access this endpoint");
+      throw new UnauthorizedException("You can't access this endpoint");
     }
     const user = await this.userModel.findByIdAndUpdate(id, updateUserDTO, {
       new: true,
     });
+
+    if (!user) {
+      throw new BadRequestException('UserID is not correct');
+    }
     return user;
   }
 
   async delete(id: string, userID: string): Promise<User> {
     if (id !== userID) {
-      throw new BadRequestException("You can't access this endpoint");
+      throw new UnauthorizedException("You can't access this endpoint");
     }
     const user = await this.userModel.findByIdAndUpdate(
       id,
@@ -105,6 +107,9 @@ export class UserService {
         new: true,
       },
     );
+    if (!user) {
+      throw new BadRequestException('UserID is not correct');
+    }
     return user;
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { SignUpDTO } from './dto/signup.dto';
 import { SignInDTO } from './dto/signin.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -149,7 +149,7 @@ export class AuthService {
     return 'Resent verification code successfully! Check your email again';
   }
 
-  async changePassword(changePasswordDTO: ChangePasswordDTO) {
+  async changePassword(changePasswordDTO: ChangePasswordDTO, id: string) {
     const { email, password, newPassword } = changePasswordDTO;
 
     const user = await this.userModel.findOne({
@@ -158,6 +158,10 @@ export class AuthService {
 
     if (!user) {
       throw new BadRequestException('Wrong email!');
+    }
+
+    if(user.id !== id) {
+      throw new UnauthorizedException("You cant access this endpoint")
     }
 
     const validPassword = await comparePassword(password, user.password);
