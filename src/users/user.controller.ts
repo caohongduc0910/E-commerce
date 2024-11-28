@@ -20,6 +20,7 @@ import { Role } from 'src/enums/role.enum';
 import { RolesGuard } from 'src/role/role.guard';
 import { User } from './schemas/user.schema';
 import { GetUser } from './decorators/user.decorator';
+import { QueryUserDTO } from './dto/query-user.dto';
 
 @Controller('users')
 export class UserController {
@@ -41,14 +42,9 @@ export class UserController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Get('')
-  async getAllUsers(@Query() query: any): Promise<ResponseData> {
-    const { keyword, index, sortKey, sortValue } = query;
-    const users = await this.userService.findAll(
-      keyword,
-      index,
-      sortKey,
-      sortValue,
-    );
+  async getAllUsers(@Query() query: QueryUserDTO): Promise<ResponseData> {
+    console.log(query);
+    const users = await this.userService.findAll(query);
     return new ResponseData(users, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
+import { QueryUserDTO } from 'src/users/dto/query-user.dto';
 
 @Injectable()
 export class MyValidationPipe implements PipeTransform<any> {
@@ -13,20 +14,28 @@ export class MyValidationPipe implements PipeTransform<any> {
     if (!metatype || !this.toValidate(metatype)) {
       return value;
     }
+
     const object = plainToInstance(metatype, value);
+
+    if (object.limit === undefined) {
+      object.limit = 5;
+    }
+    if (object.page === undefined) {
+      object.page = 1;
+    }
+
     const errors = await validate(object);
     if (errors.length > 0) {
-      if (errors.length > 0) {
-        throw new BadRequestException({
-          message: 'Validation failed',
-          errors: errors.map((err) => ({
-            property: err.property,
-            constraints: err.constraints,
-          })),
-        });
-      }
+      throw new BadRequestException({
+        message: 'Validation failed',
+        errors: errors.map((err) => ({
+          property: err.property,
+          constraints: err.constraints,
+        })),
+      });
     }
-    return value;
+
+    return object;
   }
 
   private toValidate(metatype: Function): boolean {

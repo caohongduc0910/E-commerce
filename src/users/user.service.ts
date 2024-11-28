@@ -6,10 +6,14 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/users/schemas/user.schema';
-import PaginationHelper from 'src/helpers/pagination.helper';
+import {
+  calculateOffset,
+  calculateTotalPages,
+} from 'src/helpers/pagination.helper';
 import { UpdateUserDTO } from './dto/update-user.dto';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UserQuery } from '../common/interfaces/query.interface';
+import { QueryUserDTO } from './dto/query-user.dto';
 
 @Injectable()
 export class UserService {
@@ -26,13 +30,8 @@ export class UserService {
     return user;
   }
 
-  async findAll(
-    keyword: string,
-    index: string,
-    sortKey: string,
-    sortValue: string,
-  ): Promise<any> {
-    let users = [];
+  async findAll(queryUser: QueryUserDTO): Promise<any> {
+    const { keyword, limit, page, sortKey, sortValue } = queryUser;
 
     const query: UserQuery = {
       $or: [],
@@ -54,22 +53,18 @@ export class UserService {
       sort = { [sortKey]: sortValue };
     }
 
-    const totalUsers = await this.userModel.countDocuments(query);
-    const pagination = PaginationHelper(index, totalUsers);
-    console.log(pagination);
+    const skip = calculateOffset(page, limit);
+    const [totalUsers, users] = await Promise.all([
+      this.userModel.countDocuments(query),
+      this.userModel.find(query).sort(sort).limit(limit).skip(skip),
+    ]);
 
-    users = await this.userModel
-      .find(query)
-      .sort(sort)
-      .limit(pagination.limitItems)
-      .skip(pagination.skip);
-
-    console.log(query);
-    console.log(users);
+    const pages = calculateTotalPages(limit, totalUsers);
 
     return {
       users: users,
-      pagination: pagination,
+      totalUsers: totalUsers,
+      pages: pages,
     };
   }
 

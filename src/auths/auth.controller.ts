@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDTO } from './dto/signup.dto';
 import { ResponseData } from 'src/globals/globalClass';
@@ -53,8 +45,11 @@ export class AuthController {
     @Body() changePasswordDTO: ChangePasswordDTO,
     @GetUser() user: User,
   ): Promise<any> {
-    const id = user['id']
-    const response = await this.authService.changePassword(changePasswordDTO, id);
+    const id = user['id'];
+    const response = await this.authService.changePassword(
+      changePasswordDTO,
+      id,
+    );
     return new ResponseData(response, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 

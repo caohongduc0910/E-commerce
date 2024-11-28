@@ -1,27 +1,7 @@
-const PaginationHelper = (index, total) => {
-    const objectPagination: {
-      limitItems: number;
-      currentPage: number;
-      skip: number;
-      totalPages: number;
-    } = {
-      limitItems: 5,
-      currentPage: 1,
-      skip: 0,
-      totalPages: 0,
-    };
-  
-    if (index) {
-      objectPagination.currentPage = index;
-      objectPagination.skip =
-        (objectPagination.currentPage - 1) * objectPagination.limitItems;
-    }
-  
-    objectPagination['totalPages'] = Math.ceil(
-      total / objectPagination.limitItems,
-    );
-  
-    return objectPagination;
-  };
-  
-  export default PaginationHelper
+export const calculateOffset = (page: number, limit: number): number => {
+  return (page - 1) * limit;
+};
+
+export const calculateTotalPages = (limit: number, total: number): number => {
+  return Math.ceil(total / limit);
+};
