@@ -14,6 +14,7 @@ import { UpdateUserDTO } from './dto/update-user.dto';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UserQuery } from '../common/interfaces/query.interface';
 import { QueryUserDTO } from './dto/query-user.dto';
+import { hashPassword } from 'src/helpers/password.helper';
 
 @Injectable()
 export class UserService {
@@ -68,9 +69,34 @@ export class UserService {
     };
   }
 
-  async create(user: CreateUserDTO): Promise<any> {
-    const newUser = await this.userModel.create(user);
-    return newUser;
+  async create(createUserDTO: CreateUserDTO): Promise<any> {
+    const { firstName, lastName, email, password } = createUserDTO;
+
+    const existUser = await this.userModel.findOne({
+      email: email,
+    });
+
+    if (existUser) {
+      throw new BadRequestException('User already exists');
+    }
+
+    const signupUser = {
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      password: await hashPassword(password),
+      isActive: true,
+    };
+
+    const newUser = await this.userModel.create(signupUser);
+
+    const returnUser = {
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      email: newUser.email,
+      isActive: newUser.isActive,
+    };
+    return returnUser;
   }
 
   async update(
