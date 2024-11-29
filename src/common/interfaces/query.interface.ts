@@ -18,5 +18,4 @@ export interface ProductQuery {
 export interface OrderQuery {
   name?: RegExp;
   status?: string;
-  isDeleted: boolean;
 }

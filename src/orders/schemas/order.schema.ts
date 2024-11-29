@@ -38,9 +38,6 @@ export class Order {
 
   @Prop()
   total: number;
-
-  @Prop({ default: false })
-  isDeleted: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

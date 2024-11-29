@@ -11,6 +11,7 @@ import {
   calculateOffset,
   calculateTotalPages,
 } from 'src/helpers/pagination.helper';
+import { Status } from 'src/enums/status.enum';
 
 @Injectable()
 export class OrderService {
@@ -40,9 +41,7 @@ export class OrderService {
   async findAll(queryProduct: QueryOrderDTO): Promise<any> {
     const { keyword, limit, page, sortKey, sortValue, status } = queryProduct;
 
-    const query: OrderQuery = {
-      isDeleted: false,
-    };
+    const query: OrderQuery = {};
 
     if (keyword) {
       const regexKeyword: RegExp = new RegExp(keyword, 'i');
@@ -184,9 +183,13 @@ export class OrderService {
   //   }
 
   async delete(id: string): Promise<any> {
+    const existOrder = await this.orderModel.findById(id);
+    if (existOrder.status !== 'pending') {
+      throw new BadRequestException("You can't cancel this order");
+    }
     const order = await this.orderModel.findByIdAndUpdate(
       id,
-      { isDeleted: true, deletedAt: new Date() },
+      { status: Status.CANCELLED },
       {
         new: true,
       },
