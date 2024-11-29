@@ -20,8 +20,9 @@ export class OTPService {
   }
 
   async findByOtp(otp: string): Promise<any> {
-    return this.otpModel.findOne({
+    const existOTP = await this.otpModel.findOne({
       otp: otp,
     });
+    return existOTP;
   }
 }

@@ -1,7 +1,7 @@
 export class ResponseData {
   data: any
-  statusCode: number
   message: String
+  statusCode: number
 
   constructor(data: any, statusCode: number, message: String) {
     (this.data = data),

@@ -1,12 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
   Query,
-  Request,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -18,8 +18,11 @@ import { JwtAuthGuard } from 'src/auths/guards/auth.guard';
 import { CreateProductDTO } from './dto/create-product.dto';
 import { UpdateProductDTO } from './dto/update-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Public } from 'src/auths/decorators/public.decorator';
 import { memoryStorage } from 'multer';
+import { QueryProductDTO } from './dto/query-product.dto';
+import { RolesGuard } from 'src/role/role.guard';
+import { Roles } from 'src/role/role.decorator';
+import { Role } from 'src/enums/role.enum';
 
 @Controller('products')
 export class ProductController {
@@ -37,59 +40,55 @@ export class ProductController {
     }
   }
 
-  @Public()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Get()
-  async getAllProducts(@Query() query: any): Promise<ResponseData> {
-    const { keyword, index, sortKey, sortValue, category, vendor, collection } =
-      query;
-    const products = await this.productService.findAll(
-      keyword,
-      index,
-      sortKey,
-      sortValue,
-      category,
-      vendor,
-      collection,
-    );
+  async getAllProducts(@Query() query: QueryProductDTO): Promise<ResponseData> {
+    console.log(query);
+    const products = await this.productService.findAll(query);
     return new ResponseData(products, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post()
   @UseInterceptors(
     FileInterceptor('img', {
       storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
     }),
   )
-  @Public()
-  @UseGuards(JwtAuthGuard)
-  @Post()
-  // @UseInterceptors(
-  //   FileInterceptor('img', {
-  //     storage: memoryStorage(),
-  //     limits: { fileSize: 5 * 1024 * 1024 },
-  //   }),
-  // )
   async createProduct(
     @Body() createProductDTO: CreateProductDTO,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ResponseData> {
+    console.log(file);
     const product = await this.productService.create(createProductDTO, file);
     return new ResponseData(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
+  @UseInterceptors(
+    FileInterceptor('img', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
   async updateProduct(
     @Param('id') id: string,
     @Body() updateProductDTO: UpdateProductDTO,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<ResponseData> {
-    const product = await this.productService.update(id, updateProductDTO);
+    console.log(file);
+    const product = await this.productService.update(id, updateProductDTO, file);
     return new ResponseData(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Delete(':id')
   async deleteProduct(@Param('id') id: string): Promise<ResponseData> {
     const book = await this.productService.delete(id);
     return new ResponseData(book, HttpStatus.SUCCESS, HttpMessage.SUCCESS);

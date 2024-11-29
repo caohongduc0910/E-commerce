@@ -1,16 +1,20 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
+import { QUEUE_NAMES } from 'src/common/constants/queue.constant';
 import { MailService } from 'src/mails/mail.service';
 
-@Processor('emailSending')
+@Processor(QUEUE_NAMES.EMAIL)
 export class EmailConsumer {
   constructor(private mailService: MailService) {}
-  @Process('register')
+  @Process(QUEUE_NAMES.REGISTER)
   async registerEmail(job: Job<any>) {
-    this.mailService.sendVerificationCode(job.data.email, job.data.codeID);
+    const { email, codeID } = job.data;
+    this.mailService.sendVerificationCode(email, codeID);
   }
-  @Process('passwordForget')
+
+  @Process(QUEUE_NAMES.FORGET)
   async forgetPassword(job: Job<any>) {
-    this.mailService.sendOTP(job.data.email, job.data.otp)
+    const { email, otp } = job.data;
+    this.mailService.sendOTP(email, otp);
   }
 }

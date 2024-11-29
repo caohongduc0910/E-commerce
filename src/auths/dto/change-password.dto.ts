@@ -13,8 +13,4 @@ export class ChangePasswordDTO {
     @IsNotEmpty()
     @IsString()
     newPassword: string
-    
-    @IsNotEmpty()
-    @IsString()
-    readonly cfPassword: string
 }

@@ -29,7 +29,7 @@ export class User {
   @Prop()
   address: string;
 
-  @Prop()
+  @Prop({ default: Role.USER })
   role: Role;
 
   @Prop()
@@ -41,6 +41,11 @@ export class User {
   @Prop({ default: false })
   isActive: boolean;
 
+  @Prop({ default: false })
+  isDeleted: boolean;
+
+  @Prop()
+  deletedAt: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

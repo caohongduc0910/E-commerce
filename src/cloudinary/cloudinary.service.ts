@@ -11,19 +11,29 @@ export class CloudinaryService {
     });
   }
 
-  async uploadImage(file: Express.Multer.File): Promise<any> {
+  async uploadImage(
+    file: Express.Multer.File,
+    options?: { folder?: string; public_id?: string },
+  ): Promise<any> {
     return new Promise((resolve, reject) => {
       if (!file || !file.buffer) {
         reject('File or file buffer is undefined');
       }
 
-      cloudinary.uploader.upload_stream(
-        { folder: 'products' },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve(result);
-        },
-      ).end(file.buffer);
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: options?.folder || 'products',
+            public_id: options?.public_id,
+          },
+          (error, result) => {
+            if (error) {
+              return reject(error);
+            }
+            resolve(result);
+          },
+        )
+        .end(file.buffer);
     });
   }
 }

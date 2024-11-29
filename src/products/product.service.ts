@@ -1,10 +1,16 @@
 import mongoose from 'mongoose';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Product } from './schemas/product.schema';
-import PaginationHelper from 'src/helpers/pagination.helper';
 import { CreateProductDTO } from './dto/create-product.dto';
 import { UpdateProductDTO } from './dto/update-product.dto';
+import { QueryProductDTO } from './dto/query-product.dto';
+import { ProductQuery } from 'src/common/interfaces/query.interface';
+import {
+  calculateOffset,
+  calculateTotalPages,
+} from 'src/helpers/pagination.helper';
+import { v4 as uuidv4 } from 'uuid';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
@@ -12,7 +18,7 @@ export class ProductService {
   constructor(
     @InjectModel(Product.name)
     private productModel: mongoose.Model<Product>,
-    private readonly cloudinaryService: CloudinaryService,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   async findById(id: string): Promise<any> {
@@ -20,24 +26,17 @@ export class ProductService {
     return product;
   }
 
-  async findAll(
-    keyword: string,
-    index: string,
-    sortKey: string,
-    sortValue: string,
-    category: string,
-    vendor: string,
-    collection: string,
-  ): Promise<Product[]> {
-    let products = [];
-
-    interface ProductQuery {
-      title?: RegExp;
-      category?: string;
-      vendor?: string;
-      collection?: string;
-      isDeleted: boolean;
-    }
+  async findAll(queryProduct: QueryProductDTO): Promise<any> {
+    const {
+      keyword,
+      limit,
+      page,
+      sortKey,
+      sortValue,
+      category,
+      vendor,
+      collection,
+    } = queryProduct;
 
     const query: ProductQuery = {
       isDeleted: false,
@@ -60,32 +59,42 @@ export class ProductService {
       query.collection = collection;
     }
 
-    let sort = {};
+    let sort: Record<string, any> = {
+      createdAt: 'desc',
+    };
+
     if (sortKey && sortValue) {
-      sort[sortKey] = sortValue;
-    } else {
-      sort['title'] = 'asc';
+      sort = { [sortKey]: sortValue, ...sort };
     }
 
-    const totalProducts = await this.productModel.countDocuments({
-      active: true,
-    });
-    const pagination = PaginationHelper(index, totalProducts);
+    const skip = calculateOffset(page, limit);
+    const [totalProducts, products] = await Promise.all([
+      this.productModel.countDocuments(query),
+      this.productModel.find(query).sort(sort).limit(limit).skip(skip),
+    ]);
 
-    console.log(pagination);
-    console.log(query);
+    const pages = calculateTotalPages(limit, totalProducts);
 
-    products = await this.productModel
-      .find(query)
-      .sort(sort)
-      .limit(pagination.limitItems)
-      .skip(pagination.startItem);
-
-    return products;
+    return {
+      products: products,
+      totalProducts: totalProducts,
+      pages: pages,
+    };
   }
 
-  async create(createProductDTO: CreateProductDTO, file): Promise<any> {
-    const uploadResult = await this.cloudinaryService.uploadImage(file);
+  async create(
+    createProductDTO: CreateProductDTO,
+    file: Express.Multer.File,
+  ): Promise<any> {
+    if (file.size > 10 * 1024 * 1024) {
+      throw new BadRequestException('File size exceeds 10MB.');
+    }
+    const uniqueName = `${uuidv4()}_${Date.now()}`;
+
+    const uploadResult = await this.cloudinaryService.uploadImage(file, {
+      public_id: uniqueName,
+    });
+
     const newCreateProductDTO = {
       ...createProductDTO,
       image: uploadResult.secure_url,
@@ -94,17 +103,38 @@ export class ProductService {
     return newProduct;
   }
 
-  async update(id: string, product: UpdateProductDTO): Promise<Product> {
-    const updatedBook = await this.productModel.findByIdAndUpdate(id, product, {
-      new: true,
+  async update(
+    id: string,
+    updateProductDTO: UpdateProductDTO,
+    file: Express.Multer.File,
+  ): Promise<Product> {
+    if (file.size > 10 * 1024 * 1024) {
+      throw new BadRequestException('File size exceeds 10MB.');
+    }
+    const uniqueName = `${uuidv4()}_${Date.now()}`;
+
+    const uploadResult = await this.cloudinaryService.uploadImage(file, {
+      public_id: uniqueName,
     });
+
+    const newUpdateProductDTO = {
+      ...updateProductDTO,
+      image: uploadResult.secure_url,
+    };
+    const updatedBook = await this.productModel.findByIdAndUpdate(
+      id,
+      newUpdateProductDTO,
+      {
+        new: true,
+      },
+    );
     return updatedBook;
   }
 
   async delete(id: string): Promise<Product> {
     const product = await this.productModel.findByIdAndUpdate(
       id,
-      { isDeleted: true },
+      { isDeleted: true, isActive: false, deletedAt: new Date() },
       {
         new: true,
       },

@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsEmail, IsString, MinLength, MaxLength, Matches} from 'class-validator';
 
-export class SignUpDTO {
+export class CreateUserDTO {
   @IsNotEmpty({ message: 'first name is required' })
   @IsString()
   readonly firstName: string;
