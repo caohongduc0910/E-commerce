@@ -95,8 +95,19 @@ export class ProductService {
       public_id: uniqueName,
     });
 
+    let { title, price, salePrice, category, tag, vendor } = createProductDTO;
+
+    if (!salePrice) {
+      salePrice = price;
+    }
+
     const newCreateProductDTO = {
-      ...createProductDTO,
+      title: title,
+      price: price,
+      salePrice: salePrice,
+      category: category,
+      tag: tag,
+      vendor: vendor,
       image: uploadResult.secure_url,
     };
     const newProduct = await this.productModel.create(newCreateProductDTO);

@@ -31,13 +31,8 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   async getProduct(@Param('id') id: string): Promise<ResponseData> {
-    try {
-      const user = await this.productService.findById(id);
-      return new ResponseData(user, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
-    } catch (error) {
-      console.log(error);
-      return new ResponseData(null, HttpStatus.ERROR, HttpMessage.ERROR);
-    }
+    const product = await this.productService.findById(id);
+    return new ResponseData(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -62,7 +57,7 @@ export class ProductController {
     @Body() createProductDTO: CreateProductDTO,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ResponseData> {
-    console.log(file);
+    // console.log(file);
     const product = await this.productService.create(createProductDTO, file);
     return new ResponseData(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
@@ -82,7 +77,11 @@ export class ProductController {
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ResponseData> {
     console.log(file);
-    const product = await this.productService.update(id, updateProductDTO, file);
+    const product = await this.productService.update(
+      id,
+      updateProductDTO,
+      file,
+    );
     return new ResponseData(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
