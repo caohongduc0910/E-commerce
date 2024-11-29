@@ -14,3 +14,9 @@ export interface ProductQuery {
   collection?: string;
   isDeleted: boolean;
 }
+
+export interface OrderQuery {
+  name?: RegExp;
+  status?: string;
+  isDeleted: boolean;
+}

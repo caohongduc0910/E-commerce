@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { Color } from 'src/enums/color.enum';
-import { Size } from 'src/enums/size.enum';
+import { Product } from 'src/common/interfaces/product.interface';
+import { Delivery } from 'src/enums/delivery.enum';
+import { Status } from 'src/enums/status.enum';
 export type OrderDocument = HydratedDocument<Order>;
 
 @Schema({
@@ -11,14 +12,35 @@ export class Order {
   @Prop()
   userId: string;
 
-  products: [
-    {
-      productId: string;
-      color: Color,
-      size: Size,
-      quantity: Number;
-    },
-  ];
+  @Prop()
+  name: string;
+
+  @Prop({ type: Array, default: [] })
+  products: Product[];
+
+  @Prop({ default: Status.PENDING })
+  status: Status;
+
+  @Prop()
+  delivery_option: Delivery;
+
+  @Prop()
+  subtotal: number;
+
+  @Prop()
+  discount: number;
+
+  @Prop()
+  tax: number;
+
+  @Prop()
+  delivery_fee: number;
+
+  @Prop()
+  total: number;
+
+  @Prop({ default: false })
+  isDeleted: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

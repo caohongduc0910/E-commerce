@@ -1,140 +1,196 @@
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ProductQuery } from 'src/common/interfaces/query.interface';
+import { Order } from './schemas/order.schema';
+import { CreateOrderDTO } from './dto/create-order.dto';
+import { ProductService } from 'src/products/product.service';
+import { User } from 'src/users/schemas/user.schema';
+import { QueryOrderDTO } from './dto/query-order.dto';
+import { OrderQuery } from 'src/common/interfaces/query.interface';
 import {
   calculateOffset,
   calculateTotalPages,
 } from 'src/helpers/pagination.helper';
-import { v4 as uuidv4 } from 'uuid';
-import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
-import { Order } from './schemas/order.schema';
 
 @Injectable()
 export class OrderService {
   constructor(
     @InjectModel(Order.name)
-    private productModel: mongoose.Model<Order>,
+    private orderModel: mongoose.Model<Order>,
+    @InjectModel(User.name)
+    private userModel: mongoose.Model<User>,
+    private readonly productService: ProductService,
   ) {}
 
-//   async findById(id: string): Promise<any> {
-//     const product = await this.productModel.findById(id);
-//     return product;
-//   }
+  async findById(id: string): Promise<any> {
+    const order = await this.orderModel.findById(id);
+    // console.log(order.userId);
+    if (id != order.userId) {
+      throw new BadRequestException("You can't access this endpoint");
+    }
+    const user = await this.userModel
+      .findById(order.userId)
+      .select('-password -id -codeId -codeIdExpiresAt');
+    return {
+      order: order,
+      user: user,
+    };
+  }
 
-//   async findAll(queryProduct: QueryProductDTO): Promise<any> {
-//     const {
-//       keyword,
-//       limit,
-//       page,
-//       sortKey,
-//       sortValue,
-//       category,
-//       vendor,
-//       collection,
-//     } = queryProduct;
+  async findAll(queryProduct: QueryOrderDTO): Promise<any> {
+    const { keyword, limit, page, sortKey, sortValue, status } = queryProduct;
 
-//     const query: ProductQuery = {
-//       isDeleted: false,
-//     };
+    const query: OrderQuery = {
+      isDeleted: false,
+    };
 
-//     if (keyword) {
-//       const regexKeyword: RegExp = new RegExp(keyword, 'i');
-//       query.title = regexKeyword;
-//     }
+    if (keyword) {
+      const regexKeyword: RegExp = new RegExp(keyword, 'i');
+      query.name = regexKeyword;
+    }
 
-//     if (category) {
-//       query.category = category;
-//     }
+    if (status) {
+      query.status = status;
+    }
 
-//     if (vendor) {
-//       query.vendor = vendor;
-//     }
+    let sort: Record<string, any> = {
+      createdAt: 'desc',
+    };
 
-//     if (collection) {
-//       query.collection = collection;
-//     }
+    if (sortKey && sortValue) {
+      sort = { [sortKey]: sortValue, ...sort };
+    }
 
-//     let sort: Record<string, any> = {
-//       createdAt: 'desc',
-//     };
+    const skip = calculateOffset(page, limit);
+    const [totalOrders, orders] = await Promise.all([
+      this.orderModel.countDocuments(query),
+      this.orderModel.find(query).sort(sort).limit(limit).skip(skip),
+    ]);
 
-//     if (sortKey && sortValue) {
-//       sort = { [sortKey]: sortValue, ...sort };
-//     }
+    const pages = calculateTotalPages(limit, totalOrders);
 
-//     const skip = calculateOffset(page, limit);
-//     const [totalProducts, products] = await Promise.all([
-//       this.productModel.countDocuments(query),
-//       this.productModel.find(query).sort(sort).limit(limit).skip(skip),
-//     ]);
+    console.log(query);
 
-//     const pages = calculateTotalPages(limit, totalProducts);
+    return {
+      orders: orders,
+      totalOrders: totalOrders,
+      pages: pages,
+    };
+  }
 
-//     return {
-//       products: products,
-//       totalProducts: totalProducts,
-//       pages: pages,
-//     };
-//   }
+  async create(id: string, createOrderDTO: CreateOrderDTO): Promise<any> {
+    if (!id) {
+      throw new BadRequestException('Login to buy!');
+    }
 
-//   async create(
-//     createProductDTO: CreateProductDTO,
-//     file: Express.Multer.File,
-//   ): Promise<any> {
-//     if (file.size > 10 * 1024 * 1024) {
-//       throw new BadRequestException('File size exceeds 10MB.');
-//     }
-//     const uniqueName = `${uuidv4()}_${Date.now()}`;
+    const { products, delivery_option } = createOrderDTO;
 
-//     const uploadResult = await this.cloudinaryService.uploadImage(file, {
-//       public_id: uniqueName,
-//     });
+    const invalidIds = products
+      .map((product) => product.productId)
+      .filter((productId) => !Types.ObjectId.isValid(productId));
 
-//     const newCreateProductDTO = {
-//       ...createProductDTO,
-//       image: uploadResult.secure_url,
-//     };
-//     const newProduct = await this.productModel.create(newCreateProductDTO);
-//     return newProduct;
-//   }
+    if (invalidIds.length > 0) {
+      throw new BadRequestException(
+        `Invalid product IDs: ${invalidIds.join(', ')}`,
+      );
+    }
 
-//   async update(
-//     id: string,
-//     updateProductDTO: UpdateProductDTO,
-//     file: Express.Multer.File,
-//   ): Promise<Product> {
-//     if (file.size > 10 * 1024 * 1024) {
-//       throw new BadRequestException('File size exceeds 10MB.');
-//     }
-//     const uniqueName = `${uuidv4()}_${Date.now()}`;
+    const productChecks = products.map((product) =>
+      this.productService.findById(product.productId),
+    );
 
-//     const uploadResult = await this.cloudinaryService.uploadImage(file, {
-//       public_id: uniqueName,
-//     });
+    const results = await Promise.all(productChecks);
 
-//     const newUpdateProductDTO = {
-//       ...updateProductDTO,
-//       image: uploadResult.secure_url,
-//     };
-//     const updatedBook = await this.productModel.findByIdAndUpdate(
-//       id,
-//       newUpdateProductDTO,
-//       {
-//         new: true,
-//       },
-//     );
-//     return updatedBook;
-//   }
+    const nonExistentProducts = results
+      .map((result, index) => (result ? null : products[index].productId))
+      .filter((id) => id !== null);
 
-//   async delete(id: string): Promise<Product> {
-//     const product = await this.productModel.findByIdAndUpdate(
-//       id,
-//       { isDeleted: true, isActive: false, deletedAt: new Date() },
-//       {
-//         new: true,
-//       },
-//     );
-//     return product;
-//   }
+    if (nonExistentProducts.length > 0) {
+      throw new BadRequestException(
+        `Products not found: ${nonExistentProducts.join(', ')}`,
+      );
+    }
+
+    const updatedProducts = products.map((product, index) => {
+      const dbProduct = results[index];
+      const price = dbProduct.salePrice || dbProduct.price;
+      const itemSubtotal = price * product.quantity;
+
+      return {
+        ...product,
+        price,
+        itemSubtotal,
+      };
+    });
+
+    console.log(updatedProducts);
+
+    const subtotal = updatedProducts.reduce(
+      (sum, product) => sum + product.itemSubtotal,
+      0,
+    );
+
+    let delivery_fee = 100;
+    if (delivery_option === 'express') {
+      delivery_fee = 200;
+    }
+    const discount = 0.2 * subtotal;
+    const tax = (subtotal - discount) * 0.1;
+    const total = subtotal + tax + delivery_fee - discount;
+
+    const user = await this.userModel.findById(id);
+
+    const newCreateOrderDTO = {
+      userId: id,
+      name: user.firstName + ' ' + user.lastName,
+      products: updatedProducts,
+      delivery_option: delivery_option,
+      subtotal: subtotal,
+      discount: discount,
+      tax: tax,
+      delivery_fee: delivery_fee,
+      total: total,
+    };
+    const newOrder = await this.orderModel.create(newCreateOrderDTO);
+    return newOrder;
+  }
+
+  //   async update(
+  //     id: string,
+  //     updateProductDTO: UpdateProductDTO,
+  //     file: Express.Multer.File,
+  //   ): Promise<Product> {
+  //     if (file.size > 10 * 1024 * 1024) {
+  //       throw new BadRequestException('File size exceeds 10MB.');
+  //     }
+  //     const uniqueName = `${uuidv4()}_${Date.now()}`;
+
+  //     const uploadResult = await this.cloudinaryService.uploadImage(file, {
+  //       public_id: uniqueName,
+  //     });
+
+  //     const newUpdateProductDTO = {
+  //       ...updateProductDTO,
+  //       image: uploadResult.secure_url,
+  //     };
+  //     const updatedBook = await this.productModel.findByIdAndUpdate(
+  //       id,
+  //       newUpdateProductDTO,
+  //       {
+  //         new: true,
+  //       },
+  //     );
+  //     return updatedBook;
+  //   }
+
+  async delete(id: string): Promise<any> {
+    const order = await this.orderModel.findByIdAndUpdate(
+      id,
+      { isDeleted: true, deletedAt: new Date() },
+      {
+        new: true,
+      },
+    );
+    return order;
+  }
 }
