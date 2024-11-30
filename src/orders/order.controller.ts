@@ -26,13 +26,17 @@ export class OrderController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getOrder(@Param('id') id: string): Promise<ResponseData> {
-    const order = await this.orderService.findById(id);
+  async getOrder(
+    @Param('id') id: string,
+    @GetUser() user: any,
+  ): Promise<ResponseData> {
+    const userID = user.id;
+    const role = user.role;
+    const order = await this.orderService.findById(id, userID, role);
     return new ResponseData(order, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getAllOrders(@Query() query: QueryOrderDTO): Promise<ResponseData> {
     const orders = await this.orderService.findAll(query);
@@ -50,29 +54,6 @@ export class OrderController {
     return new ResponseData(order, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  //   @UseGuards(JwtAuthGuard, RolesGuard)
-  //   @Roles(Role.ADMIN)
-  //   @Patch(':id')
-  //   @UseInterceptors(
-  //     FileInterceptor('img', {
-  //       storage: memoryStorage(),
-  //       limits: { fileSize: 10 * 1024 * 1024 },
-  //     }),
-  //   )
-  //   async updateProduct(
-  //     @Param('id') id: string,
-  //     @Body() updateProductDTO: UpdateProductDTO,
-  //     @UploadedFile() file: Express.Multer.File,
-  //   ): Promise<ResponseData> {
-  //     console.log(file);
-  //     const product = await this.productService.update(
-  //       id,
-  //       updateProductDTO,
-  //       file,
-  //     );
-  //     return new ResponseData(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
-  //   }
-
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async cancelOrder(
@@ -80,8 +61,7 @@ export class OrderController {
     @GetUser() user: any,
   ): Promise<ResponseData> {
     const userID = user.id;
-    const role = user.role;
-    const book = await this.orderService.delete(id);
+    const book = await this.orderService.delete(id, userID);
     return new ResponseData(book, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 }

@@ -15,20 +15,35 @@ import { CreateUserDTO } from './dto/create-user.dto';
 import { UserQuery } from '../common/interfaces/query.interface';
 import { QueryUserDTO } from './dto/query-user.dto';
 import { hashPassword } from 'src/helpers/password.helper';
+import { v4 as uuidv4 } from 'uuid';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { OrderService } from 'src/orders/order.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name)
     private userModel: mongoose.Model<User>,
+    private orderService: OrderService,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   async findById(id: string, userID: string, role: string): Promise<any> {
     if (id !== userID && role === 'user') {
       throw new UnauthorizedException("You can't access this endpoint");
     }
-    const user = await this.userModel.findById(id).select('-password');
-    return user;
+    const [user, orders] = await Promise.all([
+      this.userModel
+        .findById(id)
+        .select('-password -codeId -codeIdExpiresAt -isDeleted -deletedAt')
+        .lean(),
+      this.orderService.findByUserId(id),
+    ]);
+
+    return {
+      user,
+      orders,
+    };
   }
 
   async findAll(queryUser: QueryUserDTO): Promise<any> {
@@ -103,34 +118,72 @@ export class UserService {
     id: string,
     updateUserDTO: UpdateUserDTO,
     userID: string,
+    file?: Express.Multer.File,
   ): Promise<User> {
     if (id !== userID) {
       throw new BadRequestException("You can't access this endpoint");
     }
-    const user = await this.userModel.findByIdAndUpdate(id, updateUserDTO, {
-      new: true,
-    });
 
+    const user = await this.userModel.findById(id);
     if (!user) {
       throw new BadRequestException('UserID is not correct');
     }
-    return user;
+
+    let avatarUrl: string | undefined;
+
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        throw new BadRequestException('File size exceeds 10MB.');
+      }
+
+      const uniqueName = `${uuidv4()}_${Date.now()}`;
+      const uploadResult = await this.cloudinaryService.uploadImage(file, {
+        public_id: uniqueName,
+      });
+
+      avatarUrl = uploadResult.secure_url;
+    }
+
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        id,
+        {
+          ...updateUserDTO,
+          ...(avatarUrl && { avatar: avatarUrl }),
+        },
+        { new: true },
+      )
+      .lean();
+
+    delete updatedUser.password;
+    delete updatedUser.codeId;
+    delete updatedUser.codeIdExpiresAt;
+    delete updatedUser.deletedAt;
+
+    return updatedUser;
   }
 
   async delete(id: string, userID: string): Promise<User> {
     if (id !== userID) {
       throw new BadRequestException("You can't access this endpoint");
     }
-    const user = await this.userModel.findByIdAndUpdate(
-      id,
-      { isDeleted: true, isActive: false , deletedAt: new Date() },
-      {
-        new: true,
-      },
-    );
+    const user = await this.userModel
+      .findByIdAndUpdate(
+        id,
+        { isDeleted: true, isActive: false, deletedAt: new Date() },
+        {
+          new: true,
+        },
+      )
+      .lean();
     if (!user) {
       throw new BadRequestException('UserID is not correct');
     }
+
+    delete user.password;
+    delete user.codeId;
+    delete user.codeIdExpiresAt;
+    delete user.deletedAt;
     return user;
   }
 }

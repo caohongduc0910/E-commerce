@@ -48,7 +48,7 @@ export class ProductController {
   @Roles(Role.ADMIN)
   @Post()
   @UseInterceptors(
-    FileInterceptor('img', {
+    FileInterceptor('image', {
       storage: memoryStorage(),
       limits: { fileSize: 10 * 1024 * 1024 },
     }),
@@ -57,7 +57,7 @@ export class ProductController {
     @Body() createProductDTO: CreateProductDTO,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ResponseData> {
-    // console.log(file);
+    console.log(file);
     const product = await this.productService.create(createProductDTO, file);
     return new ResponseData(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
@@ -66,7 +66,7 @@ export class ProductController {
   @Roles(Role.ADMIN)
   @Patch(':id')
   @UseInterceptors(
-    FileInterceptor('img', {
+    FileInterceptor('image', {
       storage: memoryStorage(),
       limits: { fileSize: 10 * 1024 * 1024 },
     }),

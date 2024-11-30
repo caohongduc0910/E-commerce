@@ -4,10 +4,14 @@ import { User, UserSchema } from 'src/users/schemas/user.schema';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { AuthModule } from 'src/auths/auth.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
+import { OrderModule } from 'src/orders/order.module';
 
 @Module({
   imports: [
     AuthModule,
+    CloudinaryModule,
+    OrderModule,
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   controllers: [UserController],

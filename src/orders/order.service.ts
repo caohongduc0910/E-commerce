@@ -1,9 +1,12 @@
 import mongoose, { Types } from 'mongoose';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Order } from './schemas/order.schema';
 import { CreateOrderDTO } from './dto/create-order.dto';
-import { ProductService } from 'src/products/product.service';
 import { User } from 'src/users/schemas/user.schema';
 import { QueryOrderDTO } from './dto/query-order.dto';
 import { OrderQuery } from 'src/common/interfaces/query.interface';
@@ -12,6 +15,9 @@ import {
   calculateTotalPages,
 } from 'src/helpers/pagination.helper';
 import { Status } from 'src/enums/status.enum';
+import { Delivery } from 'src/enums/delivery.enum';
+import { Role } from 'src/enums/role.enum';
+import { Product } from 'src/products/schemas/product.schema';
 
 @Injectable()
 export class OrderService {
@@ -20,22 +26,23 @@ export class OrderService {
     private orderModel: mongoose.Model<Order>,
     @InjectModel(User.name)
     private userModel: mongoose.Model<User>,
-    private readonly productService: ProductService,
+    @InjectModel(Product.name)
+    private productModel: mongoose.Model<Product>,
   ) {}
 
-  async findById(id: string): Promise<any> {
+  async findById(id: string, userID: string, role: string): Promise<any> {
     const order = await this.orderModel.findById(id);
-    // console.log(order.userId);
-    if (id != order.userId) {
+    if (userID != order.userId && role != Role.ADMIN) {
       throw new BadRequestException("You can't access this endpoint");
     }
-    const user = await this.userModel
-      .findById(order.userId)
-      .select('-password -id -codeId -codeIdExpiresAt');
-    return {
-      order: order,
-      user: user,
-    };
+    return order;
+  }
+
+  async findByUserId(id: string): Promise<any> {
+    const order = await this.orderModel.find({
+      userId: id,
+    });
+    return order;
   }
 
   async findAll(queryProduct: QueryOrderDTO): Promise<any> {
@@ -82,32 +89,17 @@ export class OrderService {
       throw new BadRequestException('Login to buy!');
     }
 
-    const { products, delivery_option } = createOrderDTO;
+    const user = await this.userModel.findById(id);
 
-    const invalidIds = products
-      .map((product) => product.productId)
-      .filter((productId) => !Types.ObjectId.isValid(productId));
+    const { products, deliveryOption } = createOrderDTO;
 
-    if (invalidIds.length > 0) {
-      throw new BadRequestException(
-        `Invalid product IDs: ${invalidIds.join(', ')}`,
-      );
-    }
+    const productIds = products.map((product) => product.productId);
 
-    const productChecks = products.map((product) =>
-      this.productService.findById(product.productId),
-    );
+    const results = await this.productModel.find({ _id: { $in: productIds } });
 
-    const results = await Promise.all(productChecks);
-
-    const nonExistentProducts = results
-      .map((result, index) => (result ? null : products[index].productId))
-      .filter((id) => id !== null);
-
-    if (nonExistentProducts.length > 0) {
-      throw new BadRequestException(
-        `Products not found: ${nonExistentProducts.join(', ')}`,
-      );
+    // So sánh số lượng sản phẩm
+    if (results.length !== products.length) {
+      throw new BadRequestException('One or more products do not exist!');
     }
 
     const updatedProducts = products.map((product, index) => {
@@ -129,61 +121,36 @@ export class OrderService {
       0,
     );
 
-    let delivery_fee = 100;
-    if (delivery_option === 'express') {
-      delivery_fee = 200;
+    let deliveryFee = 100;
+    if (deliveryOption === Delivery.EXPRESS) {
+      deliveryFee = 200;
     }
     const discount = 0.2 * subtotal;
     const tax = (subtotal - discount) * 0.1;
-    const total = subtotal + tax + delivery_fee - discount;
-
-    const user = await this.userModel.findById(id);
+    const total = subtotal + tax + deliveryFee - discount;
 
     const newCreateOrderDTO = {
       userId: id,
       name: user.firstName + ' ' + user.lastName,
       products: updatedProducts,
-      delivery_option: delivery_option,
+      deliverOption: deliveryOption,
       subtotal: subtotal,
       discount: discount,
       tax: tax,
-      delivery_fee: delivery_fee,
+      deliveryFee: deliveryFee,
       total: total,
     };
     const newOrder = await this.orderModel.create(newCreateOrderDTO);
     return newOrder;
   }
 
-  //   async update(
-  //     id: string,
-  //     updateProductDTO: UpdateProductDTO,
-  //     file: Express.Multer.File,
-  //   ): Promise<Product> {
-  //     if (file.size > 10 * 1024 * 1024) {
-  //       throw new BadRequestException('File size exceeds 10MB.');
-  //     }
-  //     const uniqueName = `${uuidv4()}_${Date.now()}`;
-
-  //     const uploadResult = await this.cloudinaryService.uploadImage(file, {
-  //       public_id: uniqueName,
-  //     });
-
-  //     const newUpdateProductDTO = {
-  //       ...updateProductDTO,
-  //       image: uploadResult.secure_url,
-  //     };
-  //     const updatedBook = await this.productModel.findByIdAndUpdate(
-  //       id,
-  //       newUpdateProductDTO,
-  //       {
-  //         new: true,
-  //       },
-  //     );
-  //     return updatedBook;
-  //   }
-
-  async delete(id: string): Promise<any> {
+  async delete(id: string, userID: string): Promise<any> {
     const existOrder = await this.orderModel.findById(id);
+
+    if (userID != existOrder.userId) {
+      throw new BadRequestException("You can't access this endpoint");
+    }
+
     if (existOrder.status !== 'pending') {
       throw new BadRequestException("You can't cancel this order");
     }

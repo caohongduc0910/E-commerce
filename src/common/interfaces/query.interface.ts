@@ -16,6 +16,7 @@ export interface ProductQuery {
 }
 
 export interface OrderQuery {
+  userId?: string;
   name?: RegExp;
   status?: string;
 }

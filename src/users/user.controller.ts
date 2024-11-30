@@ -7,7 +7,9 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { HttpMessage, HttpStatus } from 'src/globals/globalEnum';
 import { UserService } from './user.service';
@@ -20,6 +22,8 @@ import { Role } from 'src/enums/role.enum';
 import { RolesGuard } from 'src/role/role.guard';
 import { GetUser } from './decorators/user.decorator';
 import { QueryUserDTO } from './dto/query-user.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 @Controller('users')
 export class UserController {
@@ -59,13 +63,20 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
   async updateUser(
     @Param('id') id: string,
     @Body() updateUserDTO: UpdateUserDTO,
+    @UploadedFile() file: Express.Multer.File,
     @GetUser() user: any,
   ): Promise<ResponseData> {
-    const userID = user['id'];
-    const result = await this.userService.update(id, updateUserDTO, userID);
+    const userID = user.id;
+    const result = await this.userService.update(id, updateUserDTO, userID, file);
     return new ResponseData(result, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
@@ -75,7 +86,7 @@ export class UserController {
     @Param('id') id: string,
     @GetUser() user: any,
   ): Promise<ResponseData> {
-    const userID = user['id'];
+    const userID = user.id;
     const result = await this.userService.delete(id, userID);
     return new ResponseData(result, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }

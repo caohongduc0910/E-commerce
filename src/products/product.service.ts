@@ -84,18 +84,23 @@ export class ProductService {
 
   async create(
     createProductDTO: CreateProductDTO,
-    file: Express.Multer.File,
+    file?: Express.Multer.File,
   ): Promise<any> {
-    if (file.size > 10 * 1024 * 1024) {
-      throw new BadRequestException('File size exceeds 10MB.');
+    let imageUrl: string | undefined;
+
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        throw new BadRequestException('File size exceeds 10MB.');
+      }
+      const uniqueName = `${uuidv4()}_${Date.now()}`;
+      const uploadResult = await this.cloudinaryService.uploadImage(file, {
+        public_id: uniqueName,
+      });
+      imageUrl = uploadResult.secure_url;
     }
-    const uniqueName = `${uuidv4()}_${Date.now()}`;
 
-    const uploadResult = await this.cloudinaryService.uploadImage(file, {
-      public_id: uniqueName,
-    });
-
-    let { title, price, salePrice, category, tag, vendor } = createProductDTO;
+    let { title, price, salePrice, category, collection, tags, vendor } =
+      createProductDTO;
 
     if (!salePrice) {
       salePrice = price;
@@ -106,10 +111,12 @@ export class ProductService {
       price: price,
       salePrice: salePrice,
       category: category,
-      tag: tag,
+      collection: collection,
+      tags: tags,
       vendor: vendor,
-      image: uploadResult.secure_url,
+      image: imageUrl || null,
     };
+
     const newProduct = await this.productModel.create(newCreateProductDTO);
     return newProduct;
   }

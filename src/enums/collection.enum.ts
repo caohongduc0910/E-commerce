@@ -1,4 +1,4 @@
-export enum Tag {
+export enum Collection {
   WOMEN = 'women',
   MEN = 'men',
   FASHION = 'fashion',

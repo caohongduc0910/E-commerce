@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { Category } from 'src/enums/category.enum';
-import { Tag } from 'src/enums/tag.enum';
+import { Collection } from 'src/enums/collection.enum';
 export type ProductDocument = HydratedDocument<Product>;
 
 @Schema({
@@ -27,7 +27,10 @@ export class Product {
   category: Category;
 
   @Prop()
-  tag: Tag;
+  collection: Collection;
+
+  @Prop({ type: [String], default: [] })
+  tags: string[];
 
   @Prop()
   description: string;

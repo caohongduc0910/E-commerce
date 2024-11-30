@@ -1,7 +1,14 @@
-import { IsNotEmpty, IsString, IsNumber, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsOptional,
+  IsArray,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Category } from 'src/enums/category.enum';
-import { Tag } from 'src/enums/tag.enum';
+import { Collection } from 'src/enums/collection.enum';
 import { Vendor } from 'src/enums/vendor.enum';
 
 export class UpdateProductDTO {
@@ -14,7 +21,6 @@ export class UpdateProductDTO {
   @IsNumber()
   readonly price: number;
 
-  
   @IsOptional()
   @Transform(({ value }) => parseFloat(value))
   @IsNumber()
@@ -24,9 +30,14 @@ export class UpdateProductDTO {
   @IsEnum(Category)
   readonly category: Category;
 
-  @IsNotEmpty({ message: 'tag is required' })
-  @IsEnum(Tag)
-  readonly tag: Tag;
+  @IsNotEmpty({ message: 'Collection is required' })
+  @IsEnum(Collection)
+  readonly collection: Collection;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  readonly tags: string[];
 
   @IsNotEmpty({ message: 'vendor is required' })
   @IsEnum(Vendor)

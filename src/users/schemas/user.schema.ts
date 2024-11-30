@@ -24,6 +24,9 @@ export class User {
   password: string;
 
   @Prop()
+  avatar: string;
+
+  @Prop()
   dob: Date;
 
   @Prop()

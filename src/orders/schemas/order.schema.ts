@@ -22,7 +22,7 @@ export class Order {
   status: Status;
 
   @Prop()
-  delivery_option: Delivery;
+  deliveryOption: Delivery;
 
   @Prop()
   subtotal: number;
@@ -34,7 +34,7 @@ export class Order {
   tax: number;
 
   @Prop()
-  delivery_fee: number;
+  deliveryFee: number;
 
   @Prop()
   total: number;

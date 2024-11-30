@@ -6,6 +6,7 @@ import {
   ValidateNested,
   IsEnum,
   IsOptional,
+  IsMongoId,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Color } from 'src/enums/color.enum';
@@ -15,6 +16,7 @@ import { Delivery } from 'src/enums/delivery.enum';
 class ProductDTO {
   @IsNotEmpty({ message: 'Product ID is required' })
   @IsString()
+  @IsMongoId()
   readonly productId: string;
 
   @IsNotEmpty({ message: 'Color is required' })
@@ -39,5 +41,5 @@ export class CreateOrderDTO {
 
   @IsNotEmpty({ message: 'delivery_option is required' })
   @IsEnum(Delivery)
-  readonly delivery_option: Delivery;
+  readonly deliveryOption: Delivery;
 }
