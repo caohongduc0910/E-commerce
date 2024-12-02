@@ -16,6 +16,10 @@ export class UpdateProductDTO {
   @IsString()
   readonly title: string;
 
+  @IsOptional()
+  @IsString()
+  readonly description: string;
+
   @IsNotEmpty({ message: 'price is required' })
   @Transform(({ value }) => parseFloat(value))
   @IsNumber()

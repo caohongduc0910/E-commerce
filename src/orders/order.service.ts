@@ -31,8 +31,11 @@ export class OrderService {
   ) {}
 
   async findById(id: string, userID: string, role: string): Promise<any> {
-    const order = await this.orderModel.findById(id);
-    if (userID != order.userId && role != Role.ADMIN) {
+    const order = await this.orderModel
+      .findById(id)
+      .populate('userId', 'id')
+      .exec();
+    if (userID !== (order.userId as any)._id.toString() && role != Role.ADMIN) {
       throw new BadRequestException("You can't access this endpoint");
     }
     return order;
@@ -70,7 +73,12 @@ export class OrderService {
     const skip = calculateOffset(page, limit);
     const [totalOrders, orders] = await Promise.all([
       this.orderModel.countDocuments(query),
-      this.orderModel.find(query).sort(sort).limit(limit).skip(skip),
+      this.orderModel
+        .find(query)
+        .sort(sort)
+        .limit(limit)
+        .skip(skip)
+        .populate('userId', 'avatar firstName'),
     ]);
 
     const pages = calculateTotalPages(limit, totalOrders);
@@ -104,11 +112,18 @@ export class OrderService {
 
     const updatedProducts = products.map((product, index) => {
       const dbProduct = results[index];
+      console.log(dbProduct);
+      const title = dbProduct.title;
+      const image = dbProduct.image;
+      const category = dbProduct.category;
       const price = dbProduct.salePrice || dbProduct.price;
       const itemSubtotal = price * product.quantity;
 
       return {
         ...product,
+        title,
+        image,
+        category,
         price,
         itemSubtotal,
       };
@@ -133,7 +148,7 @@ export class OrderService {
       userId: id,
       name: user.firstName + ' ' + user.lastName,
       products: updatedProducts,
-      deliverOption: deliveryOption,
+      deliveryOption: deliveryOption,
       subtotal: subtotal,
       discount: discount,
       tax: tax,
@@ -145,11 +160,19 @@ export class OrderService {
   }
 
   async delete(id: string, userID: string): Promise<any> {
-    const existOrder = await this.orderModel.findById(id);
+    const existOrder = await this.orderModel
+      .findById(id)
+      .populate('userId', 'id')
+      .exec();
 
-    if (userID != existOrder.userId) {
+
+    console.log(userID);
+    console.log((existOrder.userId as any)._id)
+
+    if (userID !== (existOrder.userId as any)._id.toString()) {
       throw new BadRequestException("You can't access this endpoint");
     }
+    
 
     if (existOrder.status !== 'pending') {
       throw new BadRequestException("You can't cancel this order");
@@ -162,5 +185,33 @@ export class OrderService {
       },
     );
     return order;
+  }
+
+  async getOrderStatsByUserId(
+    userId: string,
+  ): Promise<{ totalOrders: number; totalAmount: number }> {
+    const result = await this.orderModel.aggregate([
+      {
+        $match: {
+          userId: userId,
+          // status: Status.CONFIRMED
+          status: { $ne: Status.CANCELLED },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalAmount: { $sum: '$total' },
+        },
+      },
+    ]);
+
+    return result.length > 0
+      ? {
+          totalOrders: result[0].totalOrders,
+          totalAmount: result[0].totalAmount,
+        }
+      : { totalOrders: 0, totalAmount: 0 };
   }
 }

@@ -99,8 +99,16 @@ export class ProductService {
       imageUrl = uploadResult.secure_url;
     }
 
-    let { title, price, salePrice, category, collection, tags, vendor } =
-      createProductDTO;
+    let {
+      title,
+      price,
+      salePrice,
+      category,
+      collection,
+      tags,
+      vendor,
+      description,
+    } = createProductDTO;
 
     if (!salePrice) {
       salePrice = price;
@@ -115,6 +123,7 @@ export class ProductService {
       tags: tags,
       vendor: vendor,
       image: imageUrl || null,
+      description: description || ""
     };
 
     const newProduct = await this.productModel.create(newCreateProductDTO);

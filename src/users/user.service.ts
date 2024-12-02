@@ -75,10 +75,23 @@ export class UserService {
       this.userModel.find(query).sort(sort).limit(limit).skip(skip),
     ]);
 
+    const usersWithOrderStats = await Promise.all(
+      users.map(async (user) => {
+        const orderStats = await this.orderService.getOrderStatsByUserId(
+          user.id,
+        );
+        return {
+          ...user.toObject(),
+          totalOrders: orderStats.totalOrders || 0,
+          totalPaid: orderStats.totalAmount || 0,
+        };
+      }),
+    );
+
     const pages = calculateTotalPages(limit, totalUsers);
 
     return {
-      users: users,
+      users: usersWithOrderStats,
       totalUsers: totalUsers,
       pages: pages,
     };
