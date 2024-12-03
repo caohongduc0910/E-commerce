@@ -1,9 +1,5 @@
 import mongoose, { Types } from 'mongoose';
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Order } from './schemas/order.schema';
 import { CreateOrderDTO } from './dto/create-order.dto';
@@ -18,6 +14,7 @@ import { Status } from 'src/enums/status.enum';
 import { Delivery } from 'src/enums/delivery.enum';
 import { Role } from 'src/enums/role.enum';
 import { Product } from 'src/products/schemas/product.schema';
+import { StripeService } from 'src/stripe/stripe.service';
 
 @Injectable()
 export class OrderService {
@@ -28,6 +25,7 @@ export class OrderService {
     private userModel: mongoose.Model<User>,
     @InjectModel(Product.name)
     private productModel: mongoose.Model<Product>,
+    private stripeService: StripeService,
   ) {}
 
   async findById(id: string, userID: string, role: string): Promise<any> {
@@ -112,7 +110,6 @@ export class OrderService {
 
     const updatedProducts = products.map((product, index) => {
       const dbProduct = results[index];
-      console.log(dbProduct);
       const title = dbProduct.title;
       const image = dbProduct.image;
       const category = dbProduct.category;
@@ -129,7 +126,7 @@ export class OrderService {
       };
     });
 
-    console.log(updatedProducts);
+    // console.log(updatedProducts);
 
     const subtotal = updatedProducts.reduce(
       (sum, product) => sum + product.itemSubtotal,
@@ -156,7 +153,16 @@ export class OrderService {
       total: total,
     };
     const newOrder = await this.orderModel.create(newCreateOrderDTO);
-    return newOrder;
+
+    const session = await this.stripeService.createCheckoutSession(
+      updatedProducts,
+      newOrder.id,
+    );
+
+    return {
+      order: newOrder,
+      url: session.url,
+    };
   }
 
   async delete(id: string, userID: string): Promise<any> {
@@ -165,14 +171,12 @@ export class OrderService {
       .populate('userId', 'id')
       .exec();
 
-
-    console.log(userID);
-    console.log((existOrder.userId as any)._id)
+    // console.log(userID);
+    // console.log((existOrder.userId as any)._id);
 
     if (userID !== (existOrder.userId as any)._id.toString()) {
       throw new BadRequestException("You can't access this endpoint");
     }
-    
 
     if (existOrder.status !== 'pending') {
       throw new BadRequestException("You can't cancel this order");

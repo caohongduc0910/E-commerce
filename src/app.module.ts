@@ -7,6 +7,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { BullModule } from '@nestjs/bull';
 import { ProductModule } from './products/product.module';
 import { OrderModule } from './orders/order.module';
+import { StripeModule } from './stripe/stripe.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { OrderModule } from './orders/order.module';
     AuthModule,
     MailerModule,
     OrderModule,
+    StripeModule,
   ],
 })
 export class AppModule {}
