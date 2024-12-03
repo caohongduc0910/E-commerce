@@ -2,7 +2,7 @@ export enum Vendor {
     SAMSUNG = 'samsung',
     APLLE = 'apple',
     ZARA = 'zara',
-    AMAZONE = 'amazone',
+    AMAZON = 'amazon',
     BOSCH = 'bosch',
     XIAOMI = 'xiaomi'
   }
