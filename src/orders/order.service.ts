@@ -33,7 +33,10 @@ export class OrderService {
       .findById(id)
       .populate('userId', 'id')
       .exec();
-    if (userID !== (order.userId as any)._id.toString() && role != Role.ADMIN) {
+    if (
+      userID !== (order.userId as any)._id.toString() &&
+      role !== Role.ADMIN
+    ) {
       throw new BadRequestException("You can't access this endpoint");
     }
     return order;
@@ -91,10 +94,6 @@ export class OrderService {
   }
 
   async create(id: string, createOrderDTO: CreateOrderDTO): Promise<any> {
-    if (!id) {
-      throw new BadRequestException('Login to buy!');
-    }
-
     const user = await this.userModel.findById(id);
 
     const { products, deliveryOption } = createOrderDTO;
@@ -167,18 +166,21 @@ export class OrderService {
 
   async delete(id: string, userID: string): Promise<any> {
     const existOrder = await this.orderModel
-      .findById(id)
+      .findOne({
+        _id: id,
+        userId: userID,
+        status: Status.PENDING,
+      })
       .populate('userId', 'id')
       .exec();
 
-    // console.log(userID);
-    // console.log((existOrder.userId as any)._id);
-
-    if (userID !== (existOrder.userId as any)._id.toString()) {
-      throw new BadRequestException("You can't access this endpoint");
+    if (!existOrder) {
+      throw new BadRequestException(
+        "Order not found or you can't access this order",
+      );
     }
 
-    if (existOrder.status !== 'pending') {
+    if (existOrder.status !== Status.PENDING) {
       throw new BadRequestException("You can't cancel this order");
     }
     const order = await this.orderModel.findByIdAndUpdate(

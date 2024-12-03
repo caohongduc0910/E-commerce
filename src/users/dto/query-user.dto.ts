@@ -1,30 +1,3 @@
-import {
-  IsString,
-  IsOptional,
-  IsNumber,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
+import { BaseQueryDTO } from 'src/common/dtos/base-search.dto';
 
-export class QueryUserDTO {
-  @IsOptional()
-  @IsString()
-  readonly keyword: string;
-
-  @IsOptional()
-  @Transform(({ value }) => value ? parseInt(value, 10) : 5)
-  @IsNumber()
-  readonly limit: number;
-
-  @IsOptional()
-  @Transform(({ value }) => value ? parseInt(value, 10) : 1)
-  @IsNumber()
-  readonly page: number;
-
-  @IsOptional()
-  @IsString()
-  readonly sortKey: string;
-
-  @IsOptional()
-  @IsString()
-  readonly sortValue: string;
-}
+export class QueryUserDTO extends BaseQueryDTO {}

@@ -83,10 +83,7 @@ export class StripeService {
         await this.orderModel.findByIdAndUpdate(id, {
           status: Status.PAID,
         });
-        console.log(
-          `Checkout Session was completed!`,
-          sessionCompleted.metadata,
-        );
+        console.log(`Checkout Session was completed!`);
         break;
       case 'payment_intent.canceled':
         console.log(`PaymentIntent was canceled!`);
