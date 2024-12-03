@@ -20,8 +20,8 @@ import { UpdateProductDTO } from './dto/update-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { QueryProductDTO } from './dto/query-product.dto';
-import { RolesGuard } from 'src/role/role.guard';
-import { Roles } from 'src/role/role.decorator';
+import { RolesGuard } from 'src/roles/role.guard';
+import { Roles } from 'src/roles/role.decorator';
 import { Role } from 'src/enums/role.enum';
 
 @Controller('products')

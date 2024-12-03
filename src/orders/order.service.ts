@@ -200,8 +200,7 @@ export class OrderService {
       {
         $match: {
           userId: userId,
-          // status: Status.CONFIRMED
-          status: { $ne: Status.CANCELLED },
+          status: Status.PAID,
         },
       },
       {

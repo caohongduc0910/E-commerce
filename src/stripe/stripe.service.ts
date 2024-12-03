@@ -2,7 +2,6 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { Status } from 'src/enums/status.enum';
-import { OrderService } from 'src/orders/order.service';
 import { Order } from 'src/orders/schemas/order.schema';
 import Stripe from 'stripe';
 
@@ -36,7 +35,7 @@ export class StripeService {
         quantity: product.quantity,
       })),
       mode: 'payment',
-      success_url: `https://domain.com/success?orderId=${orderId}`,
+      success_url: `http://localhost:3001/success.html`,
       cancel_url: `https://domain.com/cancel?orderId=${orderId}`,
       metadata: {
         orderId: orderId,

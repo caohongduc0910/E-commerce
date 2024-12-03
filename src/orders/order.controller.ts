@@ -12,8 +12,8 @@ import {
 import { HttpMessage, HttpStatus } from 'src/globals/globalEnum';
 import { ResponseData } from 'src/globals/globalClass';
 import { JwtAuthGuard } from 'src/auths/guards/auth.guard';
-import { RolesGuard } from 'src/role/role.guard';
-import { Roles } from 'src/role/role.decorator';
+import { RolesGuard } from 'src/roles/role.guard';
+import { Roles } from 'src/roles/role.decorator';
 import { Role } from 'src/enums/role.enum';
 import { OrderService } from './order.service';
 import { CreateOrderDTO } from './dto/create-order.dto';
