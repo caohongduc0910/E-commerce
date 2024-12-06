@@ -8,12 +8,14 @@ import { ProductModule } from 'src/products/product.module';
 import { User, UserSchema } from 'src/users/schemas/user.schema';
 import { Product, ProductSchema } from 'src/products/schemas/product.schema';
 import { StripeModule } from 'src/stripe/stripe.module';
+import { NotificationModule } from 'src/notifications/notification.module';
 
 @Module({
   imports: [
     AuthModule,
     ProductModule,
     StripeModule,
+    NotificationModule,
     MongooseModule.forFeature([
       { name: Order.name, schema: OrderSchema },
       { name: User.name, schema: UserSchema },

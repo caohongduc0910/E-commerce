@@ -1,64 +1,57 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
   Param,
   Patch,
-  Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { HttpMessage, HttpStatus } from 'src/globals/globalEnum';
 import { ResponseData } from 'src/globals/globalClass';
 import { JwtAuthGuard } from 'src/auths/guards/auth.guard';
-import { OrderService } from './order.service';
-import { CreateOrderDTO } from './dto/create-order.dto';
+import { NotificationService } from './notification.service';
 import { GetUser } from 'src/users/decorators/user.decorator';
-import { QueryOrderDTO } from './dto/query-order.dto';
 
-@Controller('orders')
-export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+@Controller('notifications')
+export class NotificationController {
+  constructor(private readonly notificationService: NotificationService) {}
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getOrder(
+  async getNotification(
     @Param('id') id: string,
     @GetUser() user: any,
   ): Promise<ResponseData> {
     const userID = user.id;
-    const role = user.role;
-    const order = await this.orderService.findById(id, userID, role);
+    const order = await this.notificationService.findById(id, userID);
     return new ResponseData(order, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async getAllOrders(@Query() query: QueryOrderDTO): Promise<ResponseData> {
-    const orders = await this.orderService.findAll(query);
+  async getAllNotifications(@GetUser() user: any): Promise<ResponseData> {
+    const orders = await this.notificationService.findAll(user.id);
     return new ResponseData(orders, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post()
-  async createOrder(
-    @Body() createOrderDTO: CreateOrderDTO,
+  @Patch(':id')
+  async updateNotification(
+    @Param('id') id: string,
     @GetUser() user: any,
   ): Promise<ResponseData> {
-    const id = user.id;
-    const order = await this.orderService.create(id, createOrderDTO);
-    return new ResponseData(order, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
+    const orders = await this.notificationService.update(id, user.id);
+    return new ResponseData(orders, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async cancelOrder(
+  async deleteNotification(
     @Param('id') id: string,
     @GetUser() user: any,
   ): Promise<ResponseData> {
     const userID = user.id;
-    const book = await this.orderService.delete(id, userID);
+    const book = await this.notificationService.delete(id, userID);
     return new ResponseData(book, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 }

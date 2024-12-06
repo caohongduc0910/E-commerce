@@ -6,7 +6,6 @@ import {
 import { SignUpDTO } from './dto/signup.dto';
 import { SignInDTO } from './dto/signin.dto';
 import { JwtService } from '@nestjs/jwt';
-import { MailService } from 'src/mails/mail.service';
 import { v4 as uuidv4 } from 'uuid';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from 'src/users/schemas/user.schema';

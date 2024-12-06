@@ -133,30 +133,40 @@ export class ProductService {
   async update(
     id: string,
     updateProductDTO: UpdateProductDTO,
-    file: Express.Multer.File,
+    file?: Express.Multer.File,
   ): Promise<Product> {
-    if (file.size > 10 * 1024 * 1024) {
+    // Kiểm tra dung lượng file nếu có
+    if (file && file.size > 10 * 1024 * 1024) {
       throw new BadRequestException('File size exceeds 10MB.');
     }
-    const uniqueName = `${uuidv4()}_${Date.now()}`;
-
-    const uploadResult = await this.cloudinaryService.uploadImage(file, {
-      public_id: uniqueName,
-    });
-
-    const newUpdateProductDTO = {
+  
+    let imageUrl: string | undefined;
+  
+    if (file) {
+      const uniqueName = `${uuidv4()}_${Date.now()}`;
+      const uploadResult = await this.cloudinaryService.uploadImage(file, {
+        public_id: uniqueName,
+      });
+      imageUrl = uploadResult.secure_url;
+    }
+  
+    const updateData: any = {
       ...updateProductDTO,
-      image: uploadResult.secure_url,
     };
-    const updatedBook = await this.productModel.findByIdAndUpdate(
+  
+    if (imageUrl) {
+      updateData.image = imageUrl;
+    }
+  
+    const updatedProduct = await this.productModel.findByIdAndUpdate(
       id,
-      newUpdateProductDTO,
-      {
-        new: true,
-      },
+      updateData,
+      { new: true },
     );
-    return updatedBook;
+  
+    return updatedProduct;
   }
+  
 
   async delete(id: string): Promise<Product> {
     const product = await this.productModel.findByIdAndUpdate(

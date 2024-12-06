@@ -15,6 +15,8 @@ import { Delivery } from 'src/enums/delivery.enum';
 import { Role } from 'src/enums/role.enum';
 import { Product } from 'src/products/schemas/product.schema';
 import { StripeService } from 'src/stripe/stripe.service';
+import { NotificationService } from 'src/notifications/notification.service';
+import { Type } from 'src/enums/type.enum';
 
 @Injectable()
 export class OrderService {
@@ -25,7 +27,8 @@ export class OrderService {
     private userModel: mongoose.Model<User>,
     @InjectModel(Product.name)
     private productModel: mongoose.Model<Product>,
-    private stripeService: StripeService,
+    private readonly stripeService: StripeService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async findById(id: string, userID: string, role: string): Promise<any> {
@@ -33,6 +36,11 @@ export class OrderService {
       .findById(id)
       .populate('userId', 'id')
       .exec();
+
+    if (!order) {
+      throw new BadRequestException('Order does not exist');
+    }
+
     if (
       userID !== (order.userId as any)._id.toString() &&
       role !== Role.ADMIN
@@ -153,14 +161,25 @@ export class OrderService {
     };
     const newOrder = await this.orderModel.create(newCreateOrderDTO);
 
-    const session = await this.stripeService.createCheckoutSession(
-      updatedProducts,
-      newOrder.id,
-    );
+    this.notificationService.sendNotification(id, 'order_created', {
+      message: `Order ${newOrder.id} has been created successfully.`,
+      order: newOrder,
+    });
+
+    const [notification, session] = await Promise.all([
+      this.notificationService.create(
+        id,
+        'Order created successfully',
+        'test',
+        Type.ORDER,
+      ),
+      this.stripeService.createCheckoutSession(updatedProducts, newOrder.id),
+    ]);
 
     return {
       order: newOrder,
       url: session.url,
+      notification: notification,
     };
   }
 

@@ -36,7 +36,7 @@ export class StripeService {
       })),
       mode: 'payment',
       success_url: `http://localhost:3001/success.html`,
-      cancel_url: `https://domain.com/cancel?orderId=${orderId}`,
+      cancel_url: `http://localhost:3001/fail.html`,
       metadata: {
         orderId: orderId,
       },

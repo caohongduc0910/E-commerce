@@ -74,9 +74,9 @@ export class ProductController {
   async updateProduct(
     @Param('id') id: string,
     @Body() updateProductDTO: UpdateProductDTO,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file?: Express.Multer.File,
   ): Promise<ResponseData> {
-    console.log(file);
+    // console.log(file);
     const product = await this.productService.update(
       id,
       updateProductDTO,
