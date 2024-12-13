@@ -1,0 +1,707 @@
+openapi: 3.0.3
+info:
+  title: E-commerce Training
+  description: |-
+    **This is a list of APIs for my E-commerce website**
+  version: 1.0.11
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: http://localhost:3001/api/v1
+  - url: http://localhost:3001/api/v2
+tags:
+  - name: auths
+    description: Authorization
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+  - name: users
+    description: Access to users
+    externalDocs:
+      description: Find out more about our users
+      url: http://swagger.io
+  - name: products
+    description: Access to products
+    externalDocs:
+      description: Find out more about our users
+      url: http://swagger.io
+  - name: orders
+    description: Access to orders
+    externalDocs:
+      description: Find out more about our users
+      url: http://swagger.io
+  - name: notifications
+    description: Access to notifications
+    externalDocs:
+      description: Find out more about our users
+      url: http://swagger.io
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - auths
+      description: Sign up to website
+      operationId: signup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpBody'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignUpBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SignUpResponse'
+                  statusCode:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Server Response Success'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+
+  /auth/verify:
+    post:
+      tags:
+        - auths
+      description: Verify account after signup
+      operationId: verify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    type: string
+                    example: 'Activate successfully'
+                  statusCode:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Server Response Success'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+
+  /auth/re-verify:
+    post:
+      tags:
+        - auths
+      description: Resend email
+      operationId: reVerify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReVerifyBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    type: string
+                    example: 'Resent email successfully'
+                  statusCode:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Server Response Success'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+
+  /auth/login:
+    post:
+      tags:
+        - auths
+      description: Login to website
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    type: string
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NzUxNjVjYzdlMDY0NjE5NjBiNjgxYmEiLCJ1c2VybmFtZSI6ImxpbmhuZ3V5ZW5AZ21haWwuY29tIiwiaWF0IjoxNzMzOTk4MjIxLCJleHAiOjE3MzQwMDE4MjF9.BjLV3sxCP3bBsj7J04u1hz_v1H7vJbsqyPkFWcPV4mI'
+                  statusCode:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Server Response Success'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - api_key: []
+        - petstore_auth:
+            - write:pets
+            - read:pets
+
+  /auth/change-password:
+    post:
+      tags:
+        - auths
+      description: User changes password
+      operationId: changePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    type: string
+                    example: 'Changed password successfully!'
+                  statusCode:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Server Response Success'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+
+  /auth/forget-password:
+    post:
+      tags:
+        - auths
+      description: Forget password to get OTP via email
+      operationId: forgetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgetPasswordBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    type: string
+                    example: 'Successfully! Check your email to get OTP'
+                  statusCode:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Server Response Success'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - api_key: []
+
+  /auth/reset-password:
+    post:
+      tags:
+        - auths
+      description: Reset password after forgeting it
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordBody'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    type: string
+                    example: 'Reset password successfully'
+                  statusCode:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Server Response Success'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/deactivate/{userId}:
+    patch:
+      tags:
+        - auths
+      description: Deactivate user
+      operationId: deactivate
+      parameters:
+        - name: orderId
+          in: path
+          description: ID of user that needs to be fetched
+          required: true
+          schema:
+            type: string
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: Bad request
+
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      description: Get user
+      operationId: getUserById
+      responses:
+        default:
+          description: successful operation
+
+  /users:
+    get:
+      tags:
+        - users
+      description: Get all users
+      operationId: getAllUsers
+      parameters:
+        - name: keyword
+          in: query
+          description: Keyword to search users
+          required: false
+          explode: true
+          schema:
+            type: string
+            default:
+        - name: limit
+          in: query
+          description: Number of record to be shown
+          required: false
+          explode: true
+          schema:
+            type: number
+            default:
+        - name: page
+          in: query
+          description: Current page
+          required: false
+          explode: true
+          schema:
+            type: number
+            default:
+        - name: sortKey
+          in: query
+          description: Current page
+          required: false
+          explode: true
+          schema:
+            type: string
+            default:
+        - name: sortValue
+          in: query
+          description: Current page
+          required: false
+          explode: true
+          schema:
+            type: string
+            default:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      users:
+                        $ref: '#/components/schemas/GetAllUsersResponse'
+                  statusCode:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    example: 'Server Response Success'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - users
+      description: Create user
+      operationId: createUser
+      responses:
+        '200':
+          description: Successful operation
+        default:
+          description: successful operation
+
+    patch:
+      tags:
+        - users
+      description: Update user
+      operationId: updateUser
+      parameters:
+        - name: userId
+          in: query
+          description: The user name for login
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          headers:
+            X-Rate-Limit:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+            X-Expires-After:
+              description: date in UTC when token expires
+              schema:
+                type: string
+                format: date-time
+          content:
+            application/xml:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+        '400':
+          description: Bad request
+
+  /products/{productId}:
+    get:
+      tags:
+        - products
+      description: Get product by Id
+      operationId: getProductById
+      parameters: []
+      responses:
+        default:
+          description: successful operation
+
+  /products:
+    get:
+      tags:
+        - products
+      description: Get all products
+      operationId: getAllProducts
+      parameters: []
+      responses:
+        default:
+          description: successful operation
+
+    post:
+      tags:
+        - products
+      description: Create product
+      operationId: getUserByName
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: Bad request
+
+    patch:
+      tags:
+        - products
+      description: Update product
+      operationId: updateUser
+      parameters:
+        - name: productId
+          in: path
+          description: name that need to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: successful operation
+
+    delete:
+      tags:
+        - products
+      description: Delete user
+      operationId: deleteUser
+      parameters:
+        - name: username
+          in: path
+          description: The name that needs to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        '400':
+          description: Bad request
+
+  /orders:
+    get:
+      tags:
+        - orders
+      description: Get all orders
+      operationId: logoutUser
+      parameters: []
+      responses:
+        default:
+          description: successful operation
+    post:
+      tags:
+        - orders
+      description: Create order
+      operationId: getUserByName
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: Bad request
+
+    delete:
+      tags:
+        - orders
+      description: Cancel order
+      operationId: deleteUser
+      parameters:
+        - name: orderId
+          in: path
+          description: The name that needs to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        '400':
+          description: Bad request
+
+  /notifications:
+    get:
+      tags:
+        - notifications
+      description: Get all orders
+      operationId: logoutUser
+      parameters: []
+      responses:
+        default:
+          description: successful operation
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: number
+          example: 400
+        message:
+          type: string
+          example: ''
+        errors:
+          type: array
+          example: []
+    SignUpBody:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: 'Chien'
+        lastName:
+          type: string
+          example: 'Le'
+        email:
+          type: string
+          example: 'lechien7@gmail.com'
+        password:
+          type: string
+          example: 'Chien@123456'
+    SignUpResponse:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: 'Chien'
+        lastName:
+          type: string
+          example: 'Le'
+        email:
+          type: string
+          example: 'lechien7@gmail.com'
+        isActive:
+          type: boolean
+          example: false
+    VerifyBody:
+      type: object
+      properties:
+        codeId:
+          type: string
+          example: 'b12aa7b3-db9d-48cc-b068-22e800c9149'
+    ReVerifyBody:
+      type: object
+      properties:
+        email:
+          type: string
+          example: 'caohongduc0910@gmail.com'
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          example: 'caohongduc0910@gmail.com'
+        password:
+          type: string
+          example: '123'
+    ChangePasswordBody:
+      type: object
+      properties:
+        email:
+          type: string
+          example: 'caohongduc0910@gmail.com'
+        password:
+          type: string
+          example: 'Duc@123456'
+        newPassword:
+          type: string
+          example: 'Duc@123456'
+    ForgetPasswordBody:
+      type: object
+      properties:
+        email:
+          type: string
+          example: 'caohongduc0910@gmail.com'
+    ResetPasswordBody:
+      type: object
+      properties:
+        otp:
+          type: string
+          example: '8117'
+        password:
+          type: string
+          example: '123'
+    GetAllUsersResponse:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: 'Chien'
+        lastName:
+          type: string
+          example: 'Le'
+        phone:
+          type: string
+          example: '123456789'
+        email:
+          type: string
+          example: 'lechien7@gmail.com'
+        avatar:
+          type: string
+          example: 'https://res.cloudinary.com/das4tikiy/image/upload/v1732974131/products/3a45de1a-5e92-41cc-9099-cbe46833782e_1732974129246.jpg'
+        dob:
+          type: string
+          format: date
+          example: '2003/30/12'
+        address:
+          type: string
+          example: 'Thanh Hoa'
+        totalOrders:
+          type: number
+          example: 2
+        totalPaid:
+          type: number
+          example: 1500
+
+  # requestBodies:
+  securitySchemes:
+    petstore_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header

@@ -72,7 +72,7 @@ export class UserService {
     const skip = calculateOffset(page, limit);
     const [totalUsers, users] = await Promise.all([
       this.userModel.countDocuments(query),
-      this.userModel.find(query).sort(sort).limit(limit).skip(skip),
+      this.userModel.find(query).sort(sort).limit(limit).skip(skip).select("-password -codeId -codeIdExpiresAt"),
     ]);
 
     const usersWithOrderStats = await Promise.all(

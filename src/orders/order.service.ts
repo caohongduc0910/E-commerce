@@ -219,7 +219,7 @@ export class OrderService {
       {
         $match: {
           userId: userId,
-          status: Status.PAID,
+          status: { $nin: [Status.PENDING, Status.CANCELLED, Status.FAILED] },
         },
       },
       {
