@@ -10,6 +10,7 @@ import { Transform } from 'class-transformer';
 import { Category } from 'src/enums/category.enum';
 import { Collection } from 'src/enums/collection.enum';
 import { Vendor } from 'src/enums/vendor.enum';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProductDTO {
   @IsNotEmpty({ message: 'title is required' })
@@ -41,9 +42,20 @@ export class CreateProductDTO {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) =>
+    value ? value.split(',').map((tag) => tag.trim()) : [],
+  )
   readonly tags: string[];
 
   @IsNotEmpty({ message: 'vendor is required' })
   @IsEnum(Vendor)
   readonly vendor: Vendor;
+
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    description: 'Ảnh sản phẩm',
+  })
+  @IsOptional()
+  readonly image?: any;
 }

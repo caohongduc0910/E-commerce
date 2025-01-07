@@ -36,7 +36,7 @@ export class User {
   role: Role;
 
   @Prop()
-  codeId: String;
+  codeId: string;
 
   @Prop()
   codeIdExpiresAt: Date;

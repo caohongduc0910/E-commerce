@@ -32,11 +32,7 @@ import { QUEUE_NAMES } from 'src/common/constants/queue.constant';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    EmailConsumer,
-  ],
+  providers: [AuthService, JwtStrategy, EmailConsumer],
   exports: [JwtStrategy],
 })
 export class AuthModule {}

@@ -23,6 +23,7 @@ import { QueryProductDTO } from './dto/query-product.dto';
 import { RolesGuard } from 'src/roles/role.guard';
 import { Roles } from 'src/roles/role.decorator';
 import { Role } from 'src/enums/role.enum';
+import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 
 @Controller('products')
 export class ProductController {
@@ -47,6 +48,8 @@ export class ProductController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Post()
+  @ApiConsumes('multipart/form-data')
+  @ApiBearerAuth('access-token')
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
@@ -57,7 +60,7 @@ export class ProductController {
     @Body() createProductDTO: CreateProductDTO,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ResponseData> {
-    console.log(file);
+    console.log(createProductDTO);
     const product = await this.productService.create(createProductDTO, file);
     return new ResponseData(product, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
@@ -76,7 +79,7 @@ export class ProductController {
     @Body() updateProductDTO: UpdateProductDTO,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<ResponseData> {
-    // console.log(file);
+    console.log(file);
     const product = await this.productService.update(
       id,
       updateProductDTO,

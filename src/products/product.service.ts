@@ -123,7 +123,7 @@ export class ProductService {
       tags: tags,
       vendor: vendor,
       image: imageUrl || null,
-      description: description || ""
+      description: description || '',
     };
 
     const newProduct = await this.productModel.create(newCreateProductDTO);
@@ -139,9 +139,9 @@ export class ProductService {
     if (file && file.size > 10 * 1024 * 1024) {
       throw new BadRequestException('File size exceeds 10MB.');
     }
-  
+
     let imageUrl: string | undefined;
-  
+
     if (file) {
       const uniqueName = `${uuidv4()}_${Date.now()}`;
       const uploadResult = await this.cloudinaryService.uploadImage(file, {
@@ -149,24 +149,23 @@ export class ProductService {
       });
       imageUrl = uploadResult.secure_url;
     }
-  
+
     const updateData: any = {
       ...updateProductDTO,
     };
-  
+
     if (imageUrl) {
       updateData.image = imageUrl;
     }
-  
+
     const updatedProduct = await this.productModel.findByIdAndUpdate(
       id,
       updateData,
       { new: true },
     );
-  
+
     return updatedProduct;
   }
-  
 
   async delete(id: string): Promise<Product> {
     const product = await this.productModel.findByIdAndUpdate(

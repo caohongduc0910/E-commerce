@@ -4,9 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { OTPSchema } from './schemas/otp.schema';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: 'OTP', schema: OTPSchema }]),
-  ],
+  imports: [MongooseModule.forFeature([{ name: 'OTP', schema: OTPSchema }])],
   providers: [OTPService],
   exports: [OTPService],
 })

@@ -9,6 +9,8 @@ import { ProductModule } from './products/product.module';
 import { OrderModule } from './orders/order.module';
 import { StripeModule } from './stripe/stripe.module';
 import { NotificationModule } from './notifications/notification.module';
+import { WalletModule } from './wallets/wallet.module';
+import { TransactionModule } from './transactions/transactions.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { NotificationModule } from './notifications/notification.module';
     OrderModule,
     StripeModule,
     NotificationModule,
+    WalletModule,
+    TransactionModule,
   ],
 })
 export class AppModule {}

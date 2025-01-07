@@ -76,7 +76,12 @@ export class UserController {
     @GetUser() user: any,
   ): Promise<ResponseData> {
     const userID = user.id;
-    const result = await this.userService.update(id, updateUserDTO, userID, file);
+    const result = await this.userService.update(
+      id,
+      updateUserDTO,
+      userID,
+      file,
+    );
     return new ResponseData(result, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
